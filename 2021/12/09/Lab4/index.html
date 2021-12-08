@@ -22,15 +22,15 @@
     var CONFIG = {"hostname":"southriver.space","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":true},"copycode":{"enable":true,"show_result":true,"style":"flat"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"valine","storage":true,"lazyload":true,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
   </script>
 
-  <meta name="description" content="1 实验目的  学习虚拟内存的相关知识，实现物理地址到虚拟地址的切换。 了解 RISC-V 架构中 SV39 分页模式，实现虚拟地址到物理地址的映射，并对不同的段进行相应的权限设置。   2 实验环境  Docker in Lab0   3 背景知识  3.0 前言 在 lab3 中我们赋予了 OS 对多个线程调度以及并发执行的能力，由于目前这些线程都是内核线程，因此他们可以共享运行空间，即运行">
+  <meta name="description" content="1 实验目的  学习虚拟内存的相关知识，实现物理地址到虚拟地址的切换。 了解 RISC-V 架构中 SV39 分页模式，实现虚拟地址到物理地址的映射，并对不同的段进行相应的权限设置。">
 <meta property="og:type" content="article">
 <meta property="og:title" content="ZJU OS Lab4:RV64 虚拟内存管理">
 <meta property="og:url" content="http://southriver.space/2021/12/09/Lab4/index.html">
 <meta property="og:site_name" content="South River&#39;s Space">
-<meta property="og:description" content="1 实验目的  学习虚拟内存的相关知识，实现物理地址到虚拟地址的切换。 了解 RISC-V 架构中 SV39 分页模式，实现虚拟地址到物理地址的映射，并对不同的段进行相应的权限设置。   2 实验环境  Docker in Lab0   3 背景知识  3.0 前言 在 lab3 中我们赋予了 OS 对多个线程调度以及并发执行的能力，由于目前这些线程都是内核线程，因此他们可以共享运行空间，即运行">
+<meta property="og:description" content="1 实验目的  学习虚拟内存的相关知识，实现物理地址到虚拟地址的切换。 了解 RISC-V 架构中 SV39 分页模式，实现虚拟地址到物理地址的映射，并对不同的段进行相应的权限设置。">
 <meta property="og:locale" content="en_US">
 <meta property="article:published_time" content="2021-12-08T17:56:43.000Z">
-<meta property="article:modified_time" content="2021-12-08T18:03:30.035Z">
+<meta property="article:modified_time" content="2021-12-08T18:28:59.398Z">
 <meta property="article:author" content="&lt;font color&#x3D;&#39;#000000&#39; size&#x3D;&#39;6&#39; face&#x3D;&#39;Arial&#39;&gt;South River&lt;&#x2F;font&gt;">
 <meta name="twitter:card" content="summary">
 
@@ -215,7 +215,7 @@
               <span class="post-meta-item-text">Posted on</span>
               
 
-              <time title="Created: 2021-12-09 01:56:43 / Modified: 02:03:30" itemprop="dateCreated datePublished" datetime="2021-12-09T01:56:43+08:00">2021-12-09</time>
+              <time title="Created: 2021-12-09 01:56:43 / Modified: 02:28:59" itemprop="dateCreated datePublished" datetime="2021-12-09T01:56:43+08:00">2021-12-09</time>
             </span>
 
           
@@ -234,6 +234,7 @@
 <li>学习虚拟内存的相关知识，实现物理地址到虚拟地址的切换。</li>
 <li>了解 RISC-V 架构中 SV39 分页模式，实现虚拟地址到物理地址的映射，并对不同的段进行相应的权限设置。</li>
 </ul>
+<span id="more"></span>
 <h2 id="2-实验环境"><a class="markdownIt-Anchor" href="#2-实验环境"></a> 2 实验环境</h2>
 <ul>
 <li>Docker in Lab0</li>
