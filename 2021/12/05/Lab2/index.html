@@ -1,0 +1,762 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.4.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/favicon.webp">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.webp">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon.webp">
+  <link rel="mask-icon" href="/images/favicon.webp" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+  <link rel="stylesheet" href="/lib/pace/pace-theme-bounce.min.css">
+  <script src="/lib/pace/pace.min.js"></script>
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"southriver.space","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":true},"copycode":{"enable":true,"show_result":true,"style":"flat"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"valine","storage":true,"lazyload":true,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="1 实验目的  学习 RISC-V 的异常处理相关寄存器与指令，完成对异常处理的初始化。 理解 CPU 上下文切换机制，并正确实现上下文切换功能。 编写异常处理函数，完成对特定异常的处理。 调用 OpenSBI 提供的接口，完成对时钟中断事件的设置。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="ZJU OS Lab2:RV64 时钟中断处理">
+<meta property="og:url" content="http://southriver.space/2021/12/05/Lab2/index.html">
+<meta property="og:site_name" content="South River&#39;s Space">
+<meta property="og:description" content="1 实验目的  学习 RISC-V 的异常处理相关寄存器与指令，完成对异常处理的初始化。 理解 CPU 上下文切换机制，并正确实现上下文切换功能。 编写异常处理函数，完成对特定异常的处理。 调用 OpenSBI 提供的接口，完成对时钟中断事件的设置。">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2021-12-05T11:09:17.000Z">
+<meta property="article:modified_time" content="2021-12-05T11:18:36.023Z">
+<meta property="article:author" content="&lt;font color&#x3D;&#39;#000000&#39; size&#x3D;&#39;6&#39; face&#x3D;&#39;Arial&#39;&gt;South River&lt;&#x2F;font&gt;">
+<meta property="article:tag" content="OS">
+<meta property="article:tag" content="C">
+<meta property="article:tag" content="Linux">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://southriver.space/2021/12/05/Lab2/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'en'
+  };
+</script>
+
+  <title>ZJU OS Lab2:RV64 时钟中断处理 | South River's Space</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+<style>.darkmode--activated{--body-bg-color:#282828;--content-bg-color:#333;--card-bg-color:#555;--text-color:#ccc;--blockquote-color:#bbb;--link-color:#ccc;--link-hover-color:#eee;--brand-color:#ddd;--brand-hover-color:#ddd;--table-row-odd-bg-color:#282828;--table-row-hover-bg-color:#363636;--menu-item-bg-color:#555;--btn-default-bg:#222;--btn-default-color:#ccc;--btn-default-border-color:#555;--btn-default-hover-bg:#666;--btn-default-hover-color:#ccc;--btn-default-hover-border-color:#666;--highlight-background:#282b2e;--highlight-foreground:#a9b7c6;--highlight-gutter-background:#34393d;--highlight-gutter-foreground:#9ca9b6}.darkmode--activated img{opacity:.75}.darkmode--activated img:hover{opacity:.9}.darkmode--activated code{color:#69dbdc;background:0 0}button.darkmode-toggle{z-index:9999}</style></head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">South River's Space</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description"><font size='4'> 懒。。。佛。。。宅。。。</font></p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>Tags</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>Archives</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-fw fa-user"></i>About</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="Searching..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://southriver.space/2021/12/05/Lab2/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/logo.webp">
+      <meta itemprop="name" content="<font color='#000000' size='6' face='Arial'>South River</font>">
+      <meta itemprop="description" content="<font color='#000000' size='3' face='Arial'>sleeping or playing...</font>">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="South River's Space">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          ZJU OS Lab2:RV64 时钟中断处理
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2021-12-05 19:09:17 / Modified: 19:18:36" itemprop="dateCreated datePublished" datetime="2021-12-05T19:09:17+08:00">2021-12-05</time>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h2 id="1-实验目的"><a class="markdownIt-Anchor" href="#1-实验目的"></a> 1 实验目的</h2>
+<ul>
+<li>学习 RISC-V 的异常处理相关寄存器与指令，完成对异常处理的初始化。</li>
+<li>理解 CPU 上下文切换机制，并正确实现上下文切换功能。</li>
+<li>编写异常处理函数，完成对特定异常的处理。</li>
+<li>调用 OpenSBI 提供的接口，完成对时钟中断事件的设置。</li>
+</ul>
+<span id="more"></span>
+<h2 id="2-实验环境"><a class="markdownIt-Anchor" href="#2-实验环境"></a> 2 实验环境</h2>
+<ul>
+<li>Docker in Lab0</li>
+</ul>
+<h2 id="3-背景知识"><a class="markdownIt-Anchor" href="#3-背景知识"></a> 3 背景知识</h2>
+<h3 id="30-前言"><a class="markdownIt-Anchor" href="#30-前言"></a> 3.0 前言</h3>
+<p>在 <code>lab1</code> 中我们成功的将一个最简单的 OS 启动起来， 但还没有办法与之交互。我们在课程中讲过操作系统启动之后由<strong>事件</strong>（<code>event</code>）驱动，在本次实验中我们将引入一种重要的事件 <strong>异常</strong>， 异常给了 OS 与硬件、软件交互的能力。在 <code>lab1</code> 中我们介绍了在 RISC-V 中有三种特权级 ( M 态、 S 态、 U 态 )， 在Boot阶段， OpenSBI 已经帮我们将 M 态的异常处理进行了初始化，这一部分不需要我们再去实现，因此本次试验我们重点关注 S 态的异常处理。</p>
+<h3 id="31-risc-v-中的-interrupt-和-exception"><a class="markdownIt-Anchor" href="#31-risc-v-中的-interrupt-和-exception"></a> 3.1 RISC-V 中的 Interrupt 和 Exception</h3>
+<h4 id="311-什么是-interrupt-和-exception"><a class="markdownIt-Anchor" href="#311-什么是-interrupt-和-exception"></a> 3.1.1 什么是 Interrupt 和 Exception</h4>
+<blockquote>
+<p>We use the term <strong>exception</strong> to refer to an unusual condition occurring at run time <strong>associated with an instruction</strong> in the current RISC-V hart. We use the term <strong>interrupt</strong> to refer to an <strong>external asynchronous event</strong> that may cause a RISC-V hart to experience an unexpected transfer of control. We use the term <strong>trap</strong> to refer to <strong>the transfer of control to a trap handler</strong> caused by either an exception or an interrupt.</p>
+</blockquote>
+<p>上述是 <a target="_blank" rel="noopener" href="https://github.com/riscv/riscv-isa-manual/releases/download/Ratified-IMAFDQC/riscv-spec-20191213.pdf">RISC-V Unprivileged Spec</a> 1.6 节中对于 <code>Trap</code>、 <code>Interrupt</code> 与 <code>Exception</code> 的描述。总结起来 <code>Interrupt</code> 与 <code>Exception</code> 的主要区别如下表：</p>
+<table>
+<thead>
+<tr>
+<th style="text-align:left">Interrupt</th>
+<th style="text-align:left">Exception</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left">Hardware generate</td>
+<td style="text-align:left">Software generate</td>
+</tr>
+<tr>
+<td style="text-align:left">These are <strong>asynchronous external requests</strong> for service (like keyboard or printer needs service).</td>
+<td style="text-align:left">These are <strong>synchronous internal requests</strong> for service based upon abnormal events (think of illegal instructions, illegal address, overflow etc).</td>
+</tr>
+<tr>
+<td style="text-align:left">These are <strong>normal events</strong> and shouldn’t interfere with the normal running of a computer.</td>
+<td style="text-align:left">These are <strong>abnormal events</strong> and often result in the termination of a program</td>
+</tr>
+</tbody>
+</table>
+<p>上文中的 <code>Trap</code> 描述的是一种控制转移的过程, 这个过程是由 <code>Interrupt</code> 或者 <code>Exception</code> 引起的。这里为了方便起见，我们在这里约定 <code>Trap</code> 为 <code>Interrput</code> 与 <code>Exception</code> 的总称。</p>
+<blockquote>
+<p>在下文中 我们用 <strong>异常</strong> 代指 <strong>Trap</strong></p>
+</blockquote>
+<h4 id="312-相关寄存器"><a class="markdownIt-Anchor" href="#312-相关寄存器"></a> 3.1.2 相关寄存器</h4>
+<p>除了32个通用寄存器之外，RISC-V 架构还有大量的 <strong>控制状态寄存器</strong> <code>Control and Status Registers(CSRs)</code>，下面将介绍几个和异常机制相关的重要寄存器。</p>
+<p>Supervisor Mode 异常相关寄寄存器:</p>
+<ul>
+<li><code>sstatus</code> ( Supervisor Status Register )中存在一个 SIE ( Supervisor Interrupt Enable ) 比特位，当该比特位设置为 1 时，会对所有的 S 态异常<strong>响应</strong>， 否则将会禁用所有 S 态异常。</li>
+<li><code>sie</code> ( Supervisor Interrupt Eable Register )。在 RISC-V 中，<code>Interrupt</code> 被划分为三类 <code>Software Interrupt</code>， <code>Timer Interrupt</code>， <code>External Interrupt</code>。在开启了 <code>sstatus[SIE]</code>之后，系统会根据 <code>sie</code> 中的相关比特位来决定是否对该 <code>Interrupt</code> 进行<strong>处理</strong>。</li>
+<li><code>stvec</code> ( Supervisor Trap Vector Base Address Register ) 即所谓的”中断向量表基址”。 <code>stvec</code> 有两种模式：<code>Direct 模式</code>，适用于系统中只有一个中断处理程序, 其指向中断处理入口函数 （ 本次实验中我们所用的模式 ）。<code>Vectored 模式</code>，指向中断向量表， 适用于系统中有多个中断处理程序 （ 该模式可以参考<a target="_blank" rel="noopener" href="https://elixir.bootlin.com/linux/latest/source/arch/riscv/kernel/entry.S#L564"> RISC-V 内核源码</a> ）。</li>
+<li><code>scause</code> ( Supervisor Cause Register ), 会记录异常发生的原因，还会记录该异常是 <code>Interrupt</code> 还是 <code>Exception</code>。</li>
+<li><code>sepc</code> ( Supervisor Exception Program Counter ), 会记录触发异常的那条指令的地址。</li>
+</ul>
+<p>Machine Mode 异常相关寄寄存器:</p>
+<ul>
+<li>类似于 Supervisor Mode， Machine Mode 也有相对应的寄存器，但由于本实验同学不需要操作这些寄存器，故不在此作介绍。</li>
+</ul>
+<p>以上寄存器的详细介绍请同学们参考 <a target="_blank" rel="noopener" href="https://github.com/riscv/riscv-isa-manual/releases/download/Ratified-IMFDQC-and-Priv-v1.11/riscv-privileged-20190608.pdf">RISC-V Privileged Spec</a></p>
+<h4 id="313-相关特权指令"><a class="markdownIt-Anchor" href="#313-相关特权指令"></a> 3.1.3 相关特权指令</h4>
+<ul>
+<li><code>ecall</code> ( Environment Call )，当我们在 S 态执行这条指令时，会触发一个 <code>ecall-from-s-mode-exception</code>，从而进入 M 模式中的中断处理流程( 如设置定时器等 )；当我们在 U 态执行这条指令时，会触发一个 <code>ecall-from-u-mode-exception</code>，从而进入 S 模式中的中断处理流程 ( 常用来进行系统调用 )。</li>
+<li><code>sret</code> 用于 S 态异常返回, 通过 <code>sepc</code> 来设置 <code>pc</code> 的值， 返回到之前程序继续运行。</li>
+</ul>
+<p>以上指令的详细介绍请同学们参考 <a target="_blank" rel="noopener" href="https://github.com/riscv/riscv-isa-manual/releases/download/Ratified-IMFDQC-and-Priv-v1.11/riscv-privileged-20190608.pdf">RISC-V Privileged Spec</a></p>
+<h3 id="32-上下文处理"><a class="markdownIt-Anchor" href="#32-上下文处理"></a> 3.2 上下文处理</h3>
+<p>由于在处理异常时，有可能会改变系统的状态。所以在真正处理异常之前，我们有必要对系统的当前状态进行保存，在异常处理完成之后，我们再将系统恢复至原先的状态，就可以确保之前的程序继续正常运行。<br />
+这里的系统状态通常是指寄存器，这些寄存器也叫做CPU的上下文 ( <code>Context</code> ).</p>
+<h3 id="33-异常处理程序"><a class="markdownIt-Anchor" href="#33-异常处理程序"></a> 3.3 异常处理程序</h3>
+<p>异常处理程序根据 <code>scause</code> 的值， 进入不同的处理逻辑，在本次试验中我们需要关心的只有 <code>Superviosr Timer Interrupt</code> 。</p>
+<h3 id="34-时钟中断"><a class="markdownIt-Anchor" href="#34-时钟中断"></a> 3.4 时钟中断</h3>
+<p>时钟中断需要 CPU 硬件的支持。CPU 以&quot;时钟周期&quot;为工作的基本时间单位，对逻辑门的时序电路进行同步。而时钟中断实际上就是“每隔若干个时钟周期执行一次的程序”。下面介绍与时钟中断相关的寄存器以及如何产生时钟中断。</p>
+<ul>
+<li><code>mtime</code> 与 <code>mtimecmp</code> ( Machine Timer Register )。 <code>mtime</code> 是一个实时计时器， 由硬件以恒定的频率自增。<code>mtimecmp</code> 中保存着下一次时钟中断发生的时间点，当 <code>mtime</code> 的值大于或等于 <code>mtimecmp</code> 的值，系统就会触发一次时钟中断。因此我们只需要更新 <code>mtimecmp</code> 中的值，就可以设置下一次时钟中断的触发点。 <code>OpenSBI</code> 已经为我们提供了更新 <code>mtimecmp</code> 的接口 <code>sbi_set_timer</code> ( 见 <code>lab1</code> 4.4节 )。</li>
+<li><code>mcounteren</code> ( Counter-Enable Registers )。由于 <code>mtime</code> 是属于 M 态的寄存器，我们在 S 态无法直接对其读写， 幸运的是 OpenSBI 在 M 态已经通过设置 <code>mcounteren</code> 寄存器的 <code>TM</code> 比特位， 让我们可以在 S 态中可以通过 <code>time</code> 这个<strong>只读</strong>寄存器读取到 <code>mtime</code>的当前值，相关汇编指令是 <code>rdtime</code>。</li>
+</ul>
+<p>以上寄存器的详细介绍请同学们参考 <a target="_blank" rel="noopener" href="https://github.com/riscv/riscv-isa-manual/releases/download/Ratified-IMFDQC-and-Priv-v1.11/riscv-privileged-20190608.pdf">RISC-V Privileged Spec</a></p>
+<h2 id="4-实验步骤"><a class="markdownIt-Anchor" href="#4-实验步骤"></a> 4 实验步骤</h2>
+<h3 id="41-准备工程"><a class="markdownIt-Anchor" href="#41-准备工程"></a> 4.1 准备工程</h3>
+<ul>
+<li>
+<p>此次实验基于 lab1 同学所实现的代码进行。</p>
+</li>
+<li>
+<p>在 <code>lab1</code> 中我们实现的 <code>puti</code> <code>puts</code> 使用起来较为繁琐，因此在这里我们提供了简化版的 <code>printk</code>。 从 <code>repo</code> 同步以下代码: <code>stddef.h</code> <code>printk.h</code> <code>printk.c</code>，并按如下目录结构放置。<strong>还需要将之前所有 <code>print.h puti puts</code> 的引用修改为 <code>printk.h printk</code></strong>。</p>
+  <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">.</span><br><span class="line">├── Makefile</span><br><span class="line">├── arch</span><br><span class="line">├── include</span><br><span class="line">│   ├── printk.h</span><br><span class="line">│   ├── stddef.h</span><br><span class="line">│   └── types.h</span><br><span class="line">├── init</span><br><span class="line">└── lib</span><br><span class="line">    ├── Makefile</span><br><span class="line">    └── printk.c</span><br></pre></td></tr></table></figure>
+</li>
+<li>
+<p>修改 <code>vmlinux.lds</code> 以及 <code>head.S</code></p>
+  <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line">&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt; 原先的 vmlinux.lds</span><br><span class="line">...</span><br><span class="line"></span><br><span class="line">.text : ALIGN(0x1000)&#123;</span><br><span class="line">    _stext = .;</span><br><span class="line"></span><br><span class="line">    *(.text.entry)</span><br><span class="line">    *(.text .text.*)</span><br><span class="line">    </span><br><span class="line">    _etext = .;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">...</span><br><span class="line"></span><br><span class="line">&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt; 修改之后的 vmlinux.lds</span><br><span class="line">...</span><br><span class="line"></span><br><span class="line">.text : ALIGN(0x1000)&#123;</span><br><span class="line">    _stext = .;</span><br><span class="line"></span><br><span class="line">    *(.text.init)      &lt;- 加入了 .text.init</span><br><span class="line">    *(.text.entry)     &lt;- 之后我们实现 中断处理逻辑 会放置在 .text.entry</span><br><span class="line">    *(.text .text.*)</span><br><span class="line">    </span><br><span class="line">    _etext = .;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">...</span><br></pre></td></tr></table></figure>
+  <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line">&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt; 原先的 head.S</span><br><span class="line">extern start_kernel</span><br><span class="line"></span><br><span class="line">    .section .text.entry        &lt;- 之前的 _start 放置在 .text.entry section       </span><br><span class="line">    .globl _start</span><br><span class="line">_start:</span><br><span class="line">    ...</span><br><span class="line"></span><br><span class="line">    .section .bss.stack</span><br><span class="line">    .globl boot_stack</span><br><span class="line">boot_stack:</span><br><span class="line">    .space 4096</span><br><span class="line"></span><br><span class="line">    .globl boot_stack_top</span><br><span class="line">boot_stack_top:</span><br><span class="line"></span><br><span class="line">&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt; 修改之后的 head.S</span><br><span class="line">extern start_kernel</span><br><span class="line"></span><br><span class="line">    .section .text.init         &lt;- 将 _start 放入.text.init section </span><br><span class="line">    .globl _start</span><br><span class="line">_start:</span><br><span class="line">    ...</span><br><span class="line"></span><br><span class="line">    .section .bss.stack</span><br><span class="line">    .globl boot_stack</span><br><span class="line">boot_stack:</span><br><span class="line">    .space 4096</span><br><span class="line"></span><br><span class="line">    .globl boot_stack_top</span><br><span class="line">boot_stack_top:</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<h3 id="42-开启异常处理"><a class="markdownIt-Anchor" href="#42-开启异常处理"></a> 4.2 开启异常处理</h3>
+<p>在运行 <code>start_kernel</code> 之前，我们要对上面提到的 CSR 进行初始化，初始化包括以下几个步骤：</p>
+<ol>
+<li>设置 <code>stvec</code>， 将 <code>_traps</code> ( <code>_trap</code> 在 4.3 中实现 ) 所表示的地址写入 <code>stvec</code>，这里我们采用 <code>Direct 模式</code>, 而 <code>_traps</code> 则是中断处理入口函数的基地址。</li>
+<li>开启时钟中断，将 <code>sie[STIE]</code> 置 1。</li>
+<li>设置第一次时钟中断，参考 <code>clock_set_next_event()</code> ( <code>clock_set_next_event()</code> 在 4.5 中介绍 ) 中的逻辑用汇编实现。</li>
+<li>开启 S 态下的中断响应， 将 <code>sstatus[SIE]</code> 置 1。</li>
+</ol>
+<p>按照下方模版修改 <code>arch/riscv/kernel/head.S</code>， 并补全 <code>_start</code> 中的逻辑。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line">.extern start_kernel</span><br><span class="line"></span><br><span class="line">    .section .text.init</span><br><span class="line">    .globl _start</span><br><span class="line">_start:</span><br><span class="line">    # YOUR CODE HERE</span><br><span class="line"></span><br><span class="line">    # ------------------</span><br><span class="line">        </span><br><span class="line">        # set stvec = _traps</span><br><span class="line">    </span><br><span class="line">    # ------------------</span><br><span class="line">    </span><br><span class="line">        # set sie[STIE] = 1</span><br><span class="line">    </span><br><span class="line">    # ------------------</span><br><span class="line">    </span><br><span class="line">        # set first time interrupt</span><br><span class="line">    </span><br><span class="line">    # ------------------</span><br><span class="line">    </span><br><span class="line">        # set sstatus[SIE] = 1</span><br><span class="line"></span><br><span class="line">    # ------------------</span><br><span class="line">    </span><br><span class="line">    # ------------------</span><br><span class="line">    # - your lab1 code -</span><br><span class="line">    # ------------------</span><br><span class="line"></span><br><span class="line">    ...</span><br></pre></td></tr></table></figure>
+<blockquote>
+<p>Debug 提示： 可以先不实现 stvec 和 first time interrupt， 先关注 sie 和 sstatus 是否设置正确。</p>
+</blockquote>
+<h3 id="43-实现上下文切换"><a class="markdownIt-Anchor" href="#43-实现上下文切换"></a> 4.3 实现上下文切换</h3>
+<p>我们要使用汇编实现上下文切换机制， 包含以下几个步骤：</p>
+<ol>
+<li>在 <code>arch/riscv/kernel/</code> 目录下添加 <code>entry.S</code> 文件。</li>
+<li>保存CPU的寄存器（上下文）到内存中（栈上）。</li>
+<li>将 <code>scause</code> 和 <code>sepc</code> 中的值传入异常处理函数 <code>trap_handler</code> ( <code>trap_handler</code> 在 4.4 中介绍 ) ，我们将会在 <code>trap_handler</code> 中实现对异常的处理。</li>
+<li>在完成对异常的处理之后， 我们从内存中（栈上）恢复CPU的寄存器（上下文）。</li>
+<li>从 trap 中返回。</li>
+</ol>
+<p>按照下方模版修改 <code>arch/riscv/kernel/entry.S</code>， 并补全 <code>_traps</code> 中的逻辑。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line">    .section .text.entry</span><br><span class="line">    .align 2</span><br><span class="line">    .globl _traps </span><br><span class="line">_traps:</span><br><span class="line">    # YOUR CODE HERE</span><br><span class="line">    # -----------</span><br><span class="line"></span><br><span class="line">        # 1. save 32 registers and sepc to stack</span><br><span class="line"></span><br><span class="line">    # -----------</span><br><span class="line"></span><br><span class="line">        # 2. call trap_handler</span><br><span class="line"></span><br><span class="line">    # -----------</span><br><span class="line"></span><br><span class="line">        # 3. restore sepc and 32 registers (x2(sp) should be restore last) from stack</span><br><span class="line"></span><br><span class="line">    # -----------</span><br><span class="line"></span><br><span class="line">        # 4. return from trap</span><br><span class="line"></span><br><span class="line">    # -----------</span><br></pre></td></tr></table></figure>
+<blockquote>
+<p>Debug 提示： 可以先不实现 call trap_handler， 先实现上写文切换逻辑。通过 gdb 跟踪各个寄存器，确保上下文的 save 与 restore 正确实现并正确返回。</p>
+</blockquote>
+<h3 id="44-实现异常处理函数"><a class="markdownIt-Anchor" href="#44-实现异常处理函数"></a> 4.4 实现异常处理函数</h3>
+<ol>
+<li>在 <code>arch/riscv/kernel/</code> 目录下添加 <code>trap.c</code> 文件。</li>
+<li>在 <code>trap.c</code> 中实现异常处理函数 <code>trap_handler()</code>, 其接收的两个参数分别是 <code>scause</code> 和 <code>sepc</code> 两个寄存器中的值。</li>
+</ol>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// trap.c </span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">trap_handler</span><span class="params">(<span class="keyword">unsigned</span> <span class="keyword">long</span> scause, <span class="keyword">unsigned</span> <span class="keyword">long</span> sepc)</span> </span>&#123;</span><br><span class="line">    <span class="comment">// 通过 `scause` 判断trap类型</span></span><br><span class="line">    <span class="comment">// 如果是interrupt 判断是否是timer interrupt</span></span><br><span class="line">    <span class="comment">// 如果是timer interrupt 则打印输出相关信息, 并通过 `clock_set_next_event()` 设置下一次时钟中断</span></span><br><span class="line">    <span class="comment">// `clock_set_next_event()` 见 4.5 节</span></span><br><span class="line">    <span class="comment">// 其他interrupt / exception 可以直接忽略</span></span><br><span class="line">    </span><br><span class="line">    # YOUR CODE HERE</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h3 id="45-实现时钟中断相关函数"><a class="markdownIt-Anchor" href="#45-实现时钟中断相关函数"></a> 4.5 实现时钟中断相关函数</h3>
+<ol>
+<li>在 <code>arch/riscv/kernel/</code> 目录下添加 <code>clock.c</code> 文件。</li>
+<li>在 <code>clock.c</code> 中实现 get_cycles ( ) : 使用 <code>rdtime</code> 汇编指令获得当前 <code>time</code> 寄存器中的值。</li>
+<li>在 <code>clock.c</code> 中实现 clock_set_next_event ( ) : 调用 <code>sbi_ecall</code>，设置下一个时钟中断事件。</li>
+</ol>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// clock.c</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// QEMU中时钟的频率是10MHz, 也就是1秒钟相当于10000000个时钟周期。</span></span><br><span class="line"><span class="keyword">unsigned</span> <span class="keyword">long</span> TIMECLOCK = <span class="number">10000000</span>;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">unsigned</span> <span class="keyword">long</span> <span class="title">get_cycles</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="comment">// 使用 rdtime 编写内联汇编，获取 time 寄存器中 (也就是mtime 寄存器 )的值并返回</span></span><br><span class="line">    # YOUR CODE HERE</span><br><span class="line"></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">clock_set_next_event</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="comment">// 下一次 时钟中断 的时间点</span></span><br><span class="line">    <span class="keyword">unsigned</span> <span class="keyword">long</span> next = get_cycles() + TIMECLOCK;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 使用 sbi_ecall 来完成对下一次时钟中断的设置</span></span><br><span class="line">    # YOUR CODE HERE</span><br><span class="line">&#125; </span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<h3 id="46-编译及测试"><a class="markdownIt-Anchor" href="#46-编译及测试"></a> 4.6 编译及测试</h3>
+<p>由于加入了一些新的 .c 文件，可能需要修改一些Makefile文件，请同学自己尝试修改，使项目可以编译并运行。</p>
+<p>下面是一个正确实现的输出样例。（ 仅供参考 ）</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">kernel is running!</span><br><span class="line">[S] Supervisor Mode Timer Interrupt</span><br><span class="line">kernel is running!</span><br><span class="line">[S] Supervisor Mode Timer Interrupt</span><br><span class="line">kernel is running!</span><br><span class="line">[S] Supervisor Mode Timer Interrupt</span><br><span class="line">kernel is running!</span><br><span class="line">[S] Supervisor Mode Timer Interrupt</span><br><span class="line">kernel is running!</span><br><span class="line">[S] Supervisor Mode Timer Interrupt</span><br><span class="line">kernel is running!</span><br><span class="line">[S] Supervisor Mode Timer Interrupt</span><br><span class="line">kernel is running!</span><br><span class="line">[S] Supervisor Mode Timer Interrupt</span><br><span class="line">kernel is running!</span><br><span class="line">[S] Supervisor Mode Timer Interrupt</span><br><span class="line">kernel is running!</span><br><span class="line">[S] Supervisor Mode Timer Interrupt</span><br></pre></td></tr></table></figure>
+<h2 id="思考题"><a class="markdownIt-Anchor" href="#思考题"></a> 思考题</h2>
+<ol>
+<li>在我们使用make run时， OpenSBI 会产生如下输出: <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">OpenSBI v0.9</span><br><span class="line">____                    _____ ____ _____</span><br><span class="line">/ __ \                  / ____|  _ \_   _|</span><br><span class="line">| |  | |_ __   ___ _ __ | (___ | |_) || |</span><br><span class="line">| |  | | <span class="string">&#x27;_ \ / _ \ &#x27;</span>_ \ \___ \|  _ &lt; | |</span><br><span class="line">| |__| | |_) |  __/ | | |____) | |_) || |_</span><br><span class="line">\____/| .__/ \___|_| |_|_____/|____/_____|</span><br><span class="line">        | |</span><br><span class="line">        |_|</span><br><span class="line"></span><br><span class="line">......</span><br><span class="line"></span><br><span class="line">Boot HART MIDELEG         : 0x0000000000000222</span><br><span class="line">Boot HART MEDELEG         : 0x000000000000b109</span><br><span class="line"></span><br><span class="line">......</span><br></pre></td></tr></table></figure>
+通过查看 <code>RISC-V Privileged Spec</code> 中的 <code>medeleg</code> 和 <code>mideleg</code> 解释上面 <code>MIDELEG</code> 值的含义。</li>
+</ol>
+<h2 id="作业提交"><a class="markdownIt-Anchor" href="#作业提交"></a> 作业提交</h2>
+<p>同学需要提交实验报告以及整个工程代码。在提交前请使用 <code>make clean</code> 清除所有构建产物。</p>
+
+    </div>
+
+    <div style="text-align:center;color: #ccc;font-size:14px;">---------------- The End ----------------</div>
+    
+    
+    
+    
+    
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>Post author:  </strong><font color='#000000' size='6' face='Arial'>South River</font>
+  </li>
+  <li class="post-copyright-link">
+    <strong>Post link: </strong>
+    <a href="http://southriver.space/2021/12/05/Lab2/" title="ZJU OS Lab2:RV64 时钟中断处理">http://southriver.space/2021/12/05/Lab2/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>Copyright Notice:  </strong>All articles in this blog are licensed under <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener" target="_blank"><i class="fa fa-fw fa-creative-commons"></i>BY-NC-SA</a> unless stating additionally.
+  </li>
+</ul>
+</div>
+
+
+      <footer class="post-footer">
+          
+          <div class="post-tags">
+              <a href="/tags/OS/" rel="tag"><i class="fa fa-tag"></i> OS</a>
+              <a href="/tags/C/" rel="tag"><i class="fa fa-tag"></i> C</a>
+              <a href="/tags/Linux/" rel="tag"><i class="fa fa-tag"></i> Linux</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2021/12/05/Lab1/" rel="prev" title="ZJU OS Lab1:RV64 内核引导">
+      <i class="fa fa-chevron-left"></i> ZJU OS Lab1:RV64 内核引导
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2021/12/05/Lab3/" rel="next" title="ZJU OS Lab3:RV64 内核线程调度">
+      ZJU OS Lab3:RV64 内核线程调度 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+
+
+
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-%E5%AE%9E%E9%AA%8C%E7%9B%AE%E7%9A%84"><span class="nav-number">1.</span> <span class="nav-text"> 1 实验目的</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-%E5%AE%9E%E9%AA%8C%E7%8E%AF%E5%A2%83"><span class="nav-number">2.</span> <span class="nav-text"> 2 实验环境</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-%E8%83%8C%E6%99%AF%E7%9F%A5%E8%AF%86"><span class="nav-number">3.</span> <span class="nav-text"> 3 背景知识</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#30-%E5%89%8D%E8%A8%80"><span class="nav-number">3.1.</span> <span class="nav-text"> 3.0 前言</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#31-risc-v-%E4%B8%AD%E7%9A%84-interrupt-%E5%92%8C-exception"><span class="nav-number">3.2.</span> <span class="nav-text"> 3.1 RISC-V 中的 Interrupt 和 Exception</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#311-%E4%BB%80%E4%B9%88%E6%98%AF-interrupt-%E5%92%8C-exception"><span class="nav-number">3.2.1.</span> <span class="nav-text"> 3.1.1 什么是 Interrupt 和 Exception</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#312-%E7%9B%B8%E5%85%B3%E5%AF%84%E5%AD%98%E5%99%A8"><span class="nav-number">3.2.2.</span> <span class="nav-text"> 3.1.2 相关寄存器</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#313-%E7%9B%B8%E5%85%B3%E7%89%B9%E6%9D%83%E6%8C%87%E4%BB%A4"><span class="nav-number">3.2.3.</span> <span class="nav-text"> 3.1.3 相关特权指令</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#32-%E4%B8%8A%E4%B8%8B%E6%96%87%E5%A4%84%E7%90%86"><span class="nav-number">3.3.</span> <span class="nav-text"> 3.2 上下文处理</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#33-%E5%BC%82%E5%B8%B8%E5%A4%84%E7%90%86%E7%A8%8B%E5%BA%8F"><span class="nav-number">3.4.</span> <span class="nav-text"> 3.3 异常处理程序</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#34-%E6%97%B6%E9%92%9F%E4%B8%AD%E6%96%AD"><span class="nav-number">3.5.</span> <span class="nav-text"> 3.4 时钟中断</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-%E5%AE%9E%E9%AA%8C%E6%AD%A5%E9%AA%A4"><span class="nav-number">4.</span> <span class="nav-text"> 4 实验步骤</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#41-%E5%87%86%E5%A4%87%E5%B7%A5%E7%A8%8B"><span class="nav-number">4.1.</span> <span class="nav-text"> 4.1 准备工程</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#42-%E5%BC%80%E5%90%AF%E5%BC%82%E5%B8%B8%E5%A4%84%E7%90%86"><span class="nav-number">4.2.</span> <span class="nav-text"> 4.2 开启异常处理</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#43-%E5%AE%9E%E7%8E%B0%E4%B8%8A%E4%B8%8B%E6%96%87%E5%88%87%E6%8D%A2"><span class="nav-number">4.3.</span> <span class="nav-text"> 4.3 实现上下文切换</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#44-%E5%AE%9E%E7%8E%B0%E5%BC%82%E5%B8%B8%E5%A4%84%E7%90%86%E5%87%BD%E6%95%B0"><span class="nav-number">4.4.</span> <span class="nav-text"> 4.4 实现异常处理函数</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#45-%E5%AE%9E%E7%8E%B0%E6%97%B6%E9%92%9F%E4%B8%AD%E6%96%AD%E7%9B%B8%E5%85%B3%E5%87%BD%E6%95%B0"><span class="nav-number">4.5.</span> <span class="nav-text"> 4.5 实现时钟中断相关函数</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#46-%E7%BC%96%E8%AF%91%E5%8F%8A%E6%B5%8B%E8%AF%95"><span class="nav-number">4.6.</span> <span class="nav-text"> 4.6 编译及测试</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%80%9D%E8%80%83%E9%A2%98"><span class="nav-number">5.</span> <span class="nav-text"> 思考题</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BD%9C%E4%B8%9A%E6%8F%90%E4%BA%A4"><span class="nav-number">6.</span> <span class="nav-text"> 作业提交</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="<font color='#000000' size='6' face='Arial'>South River</font>"
+      src="/images/logo.webp">
+  <p class="site-author-name" itemprop="name"><font color='#000000' size='6' face='Arial'>South River</font></p>
+  <div class="site-description" itemprop="description"><font color='#000000' size='3' face='Arial'>sleeping or playing...</font></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">7</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">5</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/South-River" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;South-River" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:278042969@qq.com" title="E-Mail → mailto:278042969@qq.com" rel="noopener" target="_blank"><i class="fa fa-fw fa-envelope"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://southriver.space/QQ" title="QQ → https:&#x2F;&#x2F;southriver.space&#x2F;QQ"><i class="fa fa-fw fa-qq"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://music.163.com/#/user/home?id=255712035" title="Netease → https:&#x2F;&#x2F;music.163.com&#x2F;#&#x2F;user&#x2F;home?id&#x3D;255712035" rel="noopener" target="_blank"><i class="fa fa-fw fa-headphones"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://space.bilibili.com/18713682" title="BiliBili → https:&#x2F;&#x2F;space.bilibili.com&#x2F;18713682" rel="noopener" target="_blank"><i class="fa fa-fw fa-play"></i></a>
+      </span>
+  </div>
+  <div class="cc-license motion-element" itemprop="license">
+    <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" class="cc-opacity" rel="noopener" target="_blank"><img src="/images/cc-by-nc-sa.svg" alt="Creative Commons"></a>
+  </div>
+
+
+
+      </div>
+
+      <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/aplayer@1.10.1/dist/APlayer.min.css">
+      <script src="https://cdn.jsdelivr.net/npm/aplayer@1.10.1/dist/APlayer.min.js"></script>
+      <!-- require MetingJS-->
+      <script src="https://cdn.jsdelivr.net/npm/meting@1.2/dist/Meting.min.js"></script> 
+	    <!--网易云-->   
+      <div class="aplayer" 
+      data-id="5247992141" 
+      data-server="netease" 
+      data-type="playlist" 
+      data-fixed="false" 
+      data-autoplay="true" 
+      data-list-folded="true"
+      data-mutex="true"
+      data-order="random" 
+      data-loop="all"
+      data-volume="0.4" 
+      data-theme="#FADFA3" 
+      date-preload="auto" > 
+      </div>
+      
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">SouthRiver</span>
+</div>
+
+<div>
+<span id="timeDate">载入天数...</span><span id="times">载入时分秒...</span>
+<script>
+    var now = new Date();
+    function createtime() {
+        var grt= new Date("12/05/2021 00:00:00");
+        now.setTime(now.getTime()+250);
+        days = (now - grt ) / 1000 / 60 / 60 / 24; dnum = Math.floor(days);
+        hours = (now - grt ) / 1000 / 60 / 60 - (24 * dnum); hnum = Math.floor(hours);
+        if(String(hnum).length ==1 ){hnum = "0" + hnum;} minutes = (now - grt ) / 1000 /60 - (24 * 60 * dnum) - (60 * hnum);
+        mnum = Math.floor(minutes); if(String(mnum).length ==1 ){mnum = "0" + mnum;}
+        seconds = (now - grt ) / 1000 - (24 * 60 * 60 * dnum) - (60 * 60 * hnum) - (60 * mnum);
+        snum = Math.round(seconds); if(String(snum).length ==1 ){snum = "0" + snum;}
+        document.getElementById("timeDate").innerHTML = "本站已运行 "+dnum+" 天 ";
+        document.getElementById("times").innerHTML = hnum + " 小时 " + mnum + " 分 " + snum + " 秒";
+    }
+setInterval("createtime()",250);
+</script>
+</div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/pjax/pjax.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+  <script>
+var pjax = new Pjax({
+  selectors: [
+    'head title',
+    '#page-configurations',
+    '.content-wrap',
+    '.post-toc-wrap',
+    '.languages',
+    '#pjax'
+  ],
+  switches: {
+    '.post-toc-wrap': Pjax.switches.innerHTML
+  },
+  analytics: false,
+  cacheBust: false,
+  scrollTo : !CONFIG.bookmark.enable
+});
+
+window.addEventListener('pjax:success', () => {
+  document.querySelectorAll('script[data-pjax], script#page-configurations, #pjax script').forEach(element => {
+    var code = element.text || element.textContent || element.innerHTML || '';
+    var parent = element.parentNode;
+    parent.removeChild(element);
+    var script = document.createElement('script');
+    if (element.id) {
+      script.id = element.id;
+    }
+    if (element.className) {
+      script.className = element.className;
+    }
+    if (element.type) {
+      script.type = element.type;
+    }
+    if (element.src) {
+      script.src = element.src;
+      // Force synchronous loading of peripheral JS.
+      script.async = false;
+    }
+    if (element.dataset.pjax !== undefined) {
+      script.dataset.pjax = '';
+    }
+    if (code !== '') {
+      script.appendChild(document.createTextNode(code));
+    }
+    parent.appendChild(script);
+  });
+  NexT.boot.refresh();
+  // Define Motion Sequence & Bootstrap Motion.
+  if (CONFIG.motion.enable) {
+    NexT.motion.integrator
+      .init()
+      .add(NexT.motion.middleWares.subMenu)
+      .add(NexT.motion.middleWares.postList)
+      .bootstrap();
+  }
+  NexT.utils.updateSidebarPosition();
+});
+</script>
+
+
+  <script defer src="/lib/three/three.min.js"></script>
+    <script defer src="/lib/three/canvas_lines.min.js"></script>
+
+
+  
+  <script data-pjax>
+    (function(){
+      var bp = document.createElement('script');
+      var curProtocol = window.location.protocol.split(':')[0];
+      bp.src = (curProtocol === 'https') ? 'https://zz.bdstatic.com/linksubmit/push.js' : 'http://push.zhanzhang.baidu.com/push.js';
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(bp, s);
+    })();
+  </script>
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <div id="pjax">
+  
+
+  
+
+  
+<script src="https://cdn.jsdelivr.net/npm/darkmode-js@1.5.7/lib/darkmode-js.min.js"></script>
+
+<script>
+var options = {
+  bottom: '75px',
+  right: 'unset',
+  left: '18px',
+  time: '0.5s',
+  mixColor: 'transparent',
+  backgroundColor: 'transparent',
+  buttonColorDark: '#000',
+  buttonColorLight: '#fff',
+  saveInCookies: true,
+  label: '🌓',
+  autoMatchOsTheme: true
+}
+const darkmode = new Darkmode(options);
+window.darkmode = darkmode;
+darkmode.showWidget();
+</script>
+
+    </div>
+  
+  <script type="text/javascript" src="/js/clicklove.js"></script>
+<script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"log":false,"pluginJsPath":"lib/","pluginModelPath":"assets/","pluginRootPath":"live2dw/","tagMode":false});</script></body>
+</html>
+

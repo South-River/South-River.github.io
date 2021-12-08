@@ -1,0 +1,757 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.4.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/favicon.webp">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.webp">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon.webp">
+  <link rel="mask-icon" href="/images/favicon.webp" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+  <link rel="stylesheet" href="/lib/pace/pace-theme-bounce.min.css">
+  <script src="/lib/pace/pace.min.js"></script>
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"southriver.space","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":true},"copycode":{"enable":true,"show_result":true,"style":"flat"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"valine","storage":true,"lazyload":true,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="1 实验目的  了解容器的使用 使用交叉编译工具, 完成Linux内核代码编译 使用QEMU运行内核 熟悉GDB和QEMU联合调试">
+<meta property="og:type" content="article">
+<meta property="og:title" content="ZJU OS Lab0:GDB + QEMU 调试 64 位 RISC-V LINUX">
+<meta property="og:url" content="http://southriver.space/2021/12/05/Lab0/index.html">
+<meta property="og:site_name" content="South River&#39;s Space">
+<meta property="og:description" content="1 实验目的  了解容器的使用 使用交叉编译工具, 完成Linux内核代码编译 使用QEMU运行内核 熟悉GDB和QEMU联合调试">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2021-12-05T11:09:15.000Z">
+<meta property="article:modified_time" content="2021-12-05T11:19:51.664Z">
+<meta property="article:author" content="&lt;font color&#x3D;&#39;#000000&#39; size&#x3D;&#39;6&#39; face&#x3D;&#39;Arial&#39;&gt;South River&lt;&#x2F;font&gt;">
+<meta property="article:tag" content="OS">
+<meta property="article:tag" content="C">
+<meta property="article:tag" content="Linux">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://southriver.space/2021/12/05/Lab0/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'en'
+  };
+</script>
+
+  <title>ZJU OS Lab0:GDB + QEMU 调试 64 位 RISC-V LINUX | South River's Space</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+<style>.darkmode--activated{--body-bg-color:#282828;--content-bg-color:#333;--card-bg-color:#555;--text-color:#ccc;--blockquote-color:#bbb;--link-color:#ccc;--link-hover-color:#eee;--brand-color:#ddd;--brand-hover-color:#ddd;--table-row-odd-bg-color:#282828;--table-row-hover-bg-color:#363636;--menu-item-bg-color:#555;--btn-default-bg:#222;--btn-default-color:#ccc;--btn-default-border-color:#555;--btn-default-hover-bg:#666;--btn-default-hover-color:#ccc;--btn-default-hover-border-color:#666;--highlight-background:#282b2e;--highlight-foreground:#a9b7c6;--highlight-gutter-background:#34393d;--highlight-gutter-foreground:#9ca9b6}.darkmode--activated img{opacity:.75}.darkmode--activated img:hover{opacity:.9}.darkmode--activated code{color:#69dbdc;background:0 0}button.darkmode-toggle{z-index:9999}</style></head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">South River's Space</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description"><font size='4'> 懒。。。佛。。。宅。。。</font></p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>Tags</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>Archives</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-fw fa-user"></i>About</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="Searching..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://southriver.space/2021/12/05/Lab0/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/logo.webp">
+      <meta itemprop="name" content="<font color='#000000' size='6' face='Arial'>South River</font>">
+      <meta itemprop="description" content="<font color='#000000' size='3' face='Arial'>sleeping or playing...</font>">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="South River's Space">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          ZJU OS Lab0:GDB + QEMU 调试 64 位 RISC-V LINUX
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2021-12-05 19:09:15 / Modified: 19:19:51" itemprop="dateCreated datePublished" datetime="2021-12-05T19:09:15+08:00">2021-12-05</time>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h2 id="1-实验目的"><a class="markdownIt-Anchor" href="#1-实验目的"></a> 1 实验目的</h2>
+<ul>
+<li>了解容器的使用</li>
+<li>使用交叉编译工具, 完成Linux内核代码编译</li>
+<li>使用QEMU运行内核</li>
+<li>熟悉GDB和QEMU联合调试</li>
+</ul>
+<span id="more"></span>
+<h2 id="2-实验环境"><a class="markdownIt-Anchor" href="#2-实验环境"></a> 2 实验环境</h2>
+<ul>
+<li>Docker</li>
+<li>实验环境镜像<a target="_blank" rel="noopener" href="https://pan.zju.edu.cn/share/ded28f6f578c955bfe94b79192">下载地址</a></li>
+</ul>
+<h2 id="3-实验基础知识介绍"><a class="markdownIt-Anchor" href="#3-实验基础知识介绍"></a> 3 实验基础知识介绍</h2>
+<h3 id="31-linux-使用基础"><a class="markdownIt-Anchor" href="#31-linux-使用基础"></a> 3.1 Linux 使用基础</h3>
+<p>在Linux环境下，人们通常使用命令行接口来完成与计算机的交互。终端（Terminal）是用于处理该过程的一个应用程序，通过终端你可以运行各种程序以及在自己的计算机上处理文件。在类Unix的操作系统上，终端可以为你完成一切你所需要的操作。下面我们仅对实验中涉及的一些概念进行介绍，你可以通过下面的链接来对命令行的使用进行学习：</p>
+<ol>
+<li><a target="_blank" rel="noopener" href="https://missing-semester-cn.github.io/2020/shell-tools">The Missing Semester of Your CS Education</a><a target="_blank" rel="noopener" href="https://www.bilibili.com/video/BV1x7411H7wa?p=2">&gt;&gt;Video&lt;&lt;</a></li>
+<li><a target="_blank" rel="noopener" href="https://tldp.org/LDP/GNU-Linux-Tools-Summary/html/index.html">GNU/Linux Command-Line Tools Summary</a></li>
+<li><a target="_blank" rel="noopener" href="https://github.com/berkeley-scf/tutorial-unix-basics">Basics of UNIX</a></li>
+</ol>
+<h3 id="32-docker-使用基础"><a class="markdownIt-Anchor" href="#32-docker-使用基础"></a> 3.2 Docker 使用基础</h3>
+<h4 id="docker-基本介绍"><a class="markdownIt-Anchor" href="#docker-基本介绍"></a> Docker 基本介绍</h4>
+<p>Docker 是一种利用容器（container）来进行创建、部署和运行应用的工具。Docker把一个应用程序运行需要的二进制文件、运行需要的库以及其他依赖文件打包为一个包（package），然后通过该包创建容器并运行，由此被打包的应用便成功运行在了Docker容器中。之所以要把应用程序打包，并以容器的方式运行，主要是因为在生产开发环境中，常常会遇到应用程序和系统环境变量以及一些依赖的库文件不匹配，导致应用无法正常运行的问题。Docker带来的好处是只要我们将应用程序打包完成（组装成为Docker imgae），在任意安装了Docker的机器上，都可以通过运行容器的方式来运行该应用程序，因而将依赖、环境变量等带来的应用部署问题解决了。</p>
+<p>如果想了解更多 Docker 的详情，请参考<a target="_blank" rel="noopener" href="https://www.docker.com/">官网</a>。</p>
+<h4 id="docker-安装"><a class="markdownIt-Anchor" href="#docker-安装"></a> Docker 安装</h4>
+<p>请根据 <a target="_blank" rel="noopener" href="https://docs.docker.com/get-docker">https://docs.docker.com/get-docker</a> 自行在本机安装 Docker 环境。你可以从 <a href="#2">2 实验环境</a> 中获得实验所需的环境，我们已经为你准备好了 RISC-V 工具链，以及 QEMU 模拟器，使用方法请参见 <a href="#4">4 实验步骤</a>。</p>
+<h3 id="33-qemu-使用基础"><a class="markdownIt-Anchor" href="#33-qemu-使用基础"></a> 3.3 QEMU 使用基础</h3>
+<h4 id="什么是qemu"><a class="markdownIt-Anchor" href="#什么是qemu"></a> 什么是QEMU</h4>
+<p>QEMU 是一个功能强大的模拟器，可以在 x86 平台上执行不同架构下的程序。我们实验中采用 QEMU 来完成 RISC-V 架构的程序的模拟。</p>
+<h4 id="如何使用-qemu常见参数介绍"><a class="markdownIt-Anchor" href="#如何使用-qemu常见参数介绍"></a> 如何使用 QEMU（常见参数介绍）</h4>
+<p>以以下命令为例，我们简单介绍 QEMU 的参数所代表的含义</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">$ qemu-system-riscv64 \</span><br><span class="line">    -nographic \</span><br><span class="line">    -machine virt \</span><br><span class="line">    -kernel path/to/linux/arch/riscv/boot/Image \</span><br><span class="line">    -device virtio-blk-device,drive=hd0 \</span><br><span class="line">    -append <span class="string">&quot;root=/dev/vda ro console=ttyS0&quot;</span> \</span><br><span class="line">    -bios default \</span><br><span class="line">    -drive file=rootfs.img,format=raw,id=hd0 \</span><br><span class="line">    -S -s</span><br></pre></td></tr></table></figure>
+<ul>
+<li><code>-nographic</code>: 不使用图形窗口，使用命令行</li>
+<li><code>-machine</code>: 指定要emulate的机器，可以通过命令 <code>qemu-system-riscv64 -machine help</code>查看可选择的机器选项</li>
+<li><code>-kernel</code>: 指定内核image</li>
+<li><code>-append cmdline</code>: 使用cmdline作为内核的命令行</li>
+<li><code>-device</code>: 指定要模拟的设备，可以通过命令 <code>qemu-system-riscv64 -device help</code> 查看可选择的设备，通过命令 <code>qemu-system-riscv64 -device &lt;具体的设备&gt;,help</code> 查看某个设备的命令选项</li>
+<li><code>-drive, file=&lt;file_name&gt;</code>: 使用 <code>file_name</code> 作为文件系统</li>
+<li><code>-S</code>: 启动时暂停CPU执行</li>
+<li><code>-s</code>: -gdb tcp::1234 的简写</li>
+<li><code>-bios default</code>: 使用默认的 OpenSBI firmware 作为 bootloader</li>
+</ul>
+<p>更多参数信息可以参考<a target="_blank" rel="noopener" href="https://www.qemu.org/docs/master/system/index.html">这里</a></p>
+<h3 id="34-gdb-使用基础"><a class="markdownIt-Anchor" href="#34-gdb-使用基础"></a> 3.4 GDB 使用基础</h3>
+<h4 id="什么是-gdb"><a class="markdownIt-Anchor" href="#什么是-gdb"></a> 什么是 GDB</h4>
+<p>GNU 调试器（英语：GNU Debugger，缩写：gdb）是一个由 GNU 开源组织发布的、UNIX/LINUX操作系统下的、基于命令行的、功能强大的程序调试工具。借助调试器，我们能够查看另一个程序在执行时实际在做什么（比如访问哪些内存、寄存器），在其他程序崩溃的时候可以比较快速地了解导致程序崩溃的原因。<br />
+被调试的程序可以是和gdb在同一台机器上（本地调试，or native debug），也可以是不同机器上（远程调试， or remote debug）。</p>
+<p>总的来说，gdb可以有以下4个功能：</p>
+<ul>
+<li>启动程序，并指定可能影响其行为的所有内容</li>
+<li>使程序在指定条件下停止</li>
+<li>检查程序停止时发生了什么</li>
+<li>更改程序中的内容，以便纠正一个bug的影响</li>
+</ul>
+<h4 id="gdb-基本命令介绍"><a class="markdownIt-Anchor" href="#gdb-基本命令介绍"></a> GDB 基本命令介绍</h4>
+<ul>
+<li>(gdb) layout asm: 显示汇编代码</li>
+<li>(gdb) start: 单步执行，运行程序，停在第一执行语句</li>
+<li>(gdb) continue: 从断点后继续执行，简写 <code>c</code></li>
+<li>(gdb) next: 单步调试（逐过程，函数直接执行），简写 <code>n</code></li>
+<li>(gdb) step instruction: 执行单条指令，简写 <code>si</code></li>
+<li>(gdb) run: 重新开始运行文件（run-text：加载文本文件，run-bin：加载二进制文件），简写 <code>r</code></li>
+<li>(gdb) backtrace：查看函数的调用的栈帧和层级关系，简写 <code>bt</code></li>
+<li>(gdb) break 设置断点，简写 <code>b</code>
+<ul>
+<li>断在 <code>foo</code> 函数：<code>b foo</code></li>
+<li>断在某地址: <code>b * 0x80200000</code></li>
+</ul>
+</li>
+<li>(gdb) finish: 结束当前函数，返回到函数调用点</li>
+<li>(gdb) frame: 切换函数的栈帧，简写 <code>f</code></li>
+<li>(gdb) print: 打印值及地址，简写 <code>p</code></li>
+<li>(gdb) info：查看函数内部局部变量的数值，简写 <code>i</code>
+<ul>
+<li>查看寄存器 ra 的值：<code>i r ra</code></li>
+</ul>
+</li>
+<li>(gdb) display：追踪查看具体变量值</li>
+<li>(gdb) <code>x/4x &lt;addr&gt;</code>: 以 16 进制打印 <code>&lt;addr&gt;</code> 处开始的 16 Bytes 内容</li>
+</ul>
+<p>更多命令可以参考<a target="_blank" rel="noopener" href="https://wizardforcel.gitbooks.io/100-gdb-tips/content/">100个gdb小技巧</a></p>
+<h3 id="35-linux-内核编译基础"><a class="markdownIt-Anchor" href="#35-linux-内核编译基础"></a> 3.5 Linux 内核编译基础</h3>
+<h4 id="交叉编译"><a class="markdownIt-Anchor" href="#交叉编译"></a> 交叉编译</h4>
+<p>交叉编译指的是在一个平台上编译可以在另一个架构运行的程序。例如在 x86 机器上编译可以在 RISC-V 架构运行的程序，交叉编译需要交叉编译工具链的支持，在我们的实验中所用的交叉编译工具链就是 <code>riscv-gnu-toolchain</code>。</p>
+<h4 id="内核配置"><a class="markdownIt-Anchor" href="#内核配置"></a> 内核配置</h4>
+<p>内核配置是用于配置是否启用内核的各项特性，内核会提供一个名为 <code>defconfig</code> (即default configuration) 的默认配置，该配置文件位于各个架构目录的 <code>configs</code> 文件夹下，例如对于RISC-V而言，其默认配置文件为 <code>arch/riscv/configs/defconfig</code>。使用 <code>make ARCH=riscv defconfig</code> 命令可以在内核根目录下生成一个名为 <code>.config</code> 的文件，包含了内核完整的配置，内核在编译时会根据 <code>.config</code> 进行编译。配置之间存在相互的依赖关系，直接修改defconfig文件或者 <code>.config</code> 有时候并不能达到想要的效果。因此如果需要修改配置一般采用 <code>make ARCH=riscv menuconfig</code> 的方式对内核进行配置。</p>
+<h4 id="常见参数"><a class="markdownIt-Anchor" href="#常见参数"></a> 常见参数</h4>
+<ul>
+<li><code>ARCH</code> 指定架构，可选的值包括arch目录下的文件夹名，如 x86、arm、arm64 等，不同于 arm 和 arm64，32 位和 64 位的RISC-V共用 <code>arch/riscv</code> 目录，通过使用不同的 config 可以编译 32 位或 64 位的内核。</li>
+<li><code>CROSS_COMPILE</code> 指定使用的交叉编译工具链，例如指定 <code>CROSS_COMPILE=riscv64-unknown-linux-gnu-</code>，则编译时会采用 <code>riscv64-unknown-linux-gnu-gcc</code> 作为编译器，编译可以在 RISC-V 64 位平台上运行的 kernel。</li>
+</ul>
+<h4 id="常用的-linux-下的编译选项"><a class="markdownIt-Anchor" href="#常用的-linux-下的编译选项"></a> 常用的 Linux 下的编译选项</h4>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">$ make <span class="built_in">help</span>         <span class="comment"># 查看make命令的各种参数解释</span></span><br><span class="line"></span><br><span class="line">$ make defconfig    <span class="comment"># 使用当前平台的默认配置，在x86机器上会使用x86的默认配置</span></span><br><span class="line">$ make -j           <span class="comment"># 编译当前平台的内核，-j 为以全部机器硬件线程数进行多线程编译</span></span><br><span class="line">$ make -j4          <span class="comment"># 编译当前平台的内核，-j 为使用 4 线程进行多线程编译</span></span><br><span class="line"></span><br><span class="line">$ make ARCH=riscv defconfig                             <span class="comment"># 使用 RISC-V 平台的默认配置</span></span><br><span class="line">$ make ARCH=riscv CROSS_COMPILE=riscv64-linux-gnu- -j   <span class="comment"># 编译 RISC-V 平台内核</span></span><br><span class="line"></span><br><span class="line">$ make clean        <span class="comment"># 清除所有编译好的 object 文件</span></span><br></pre></td></tr></table></figure>
+<h2 id="4-实验步骤"><a class="markdownIt-Anchor" href="#4-实验步骤"></a> 4 实验步骤</h2>
+<p><strong>在执行每一条命令前，请你对将要进行的操作进行思考，给出的命令不需要全部执行，并且不是所有的命令都可以无条件执行，请不要直接复制粘贴命令去执行。</strong></p>
+<h3 id="41-搭建-docker-环境"><a class="markdownIt-Anchor" href="#41-搭建-docker-环境"></a> 4.1 搭建 Docker 环境</h3>
+<p>请根据 <strong>3.2 Docker 使用基础</strong> 安装 Docker 环境。然后<strong>参考并理解</strong>以下步骤，导入我们已经准备好的 Docker 镜像：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 导入docker镜像</span></span><br><span class="line">$ cat oslab.tar | docker import - oslab:2021</span><br><span class="line"></span><br><span class="line"><span class="comment"># 查看docker镜像</span></span><br><span class="line">$ docker images</span><br><span class="line">REPOSITORY   TAG       IMAGE ID       CREATED        SIZE</span><br><span class="line">oslab        latest    b2b39a3bcd81   404 days ago   3.62GB</span><br><span class="line"></span><br><span class="line"><span class="comment"># 从镜像创建一个容器</span></span><br><span class="line">$ docker run --name oslab -it oslab:2021 bash   <span class="comment"># --name:容器名称 -i:交互式操作 -t:终端</span></span><br><span class="line">root@132a140bd724:/<span class="comment">#                            # 提示符变为 &#x27;#&#x27; 表明成功进入容器 后面的字符串根据容器而生成，为容器id</span></span><br><span class="line">root@132a140bd724:/<span class="comment"># exit (or CTRL+D)           # 从容器中退出 此时运行docker ps，运行容器的列表为空</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 启动处于停止状态的容器</span></span><br><span class="line">$ docker start oslab        <span class="comment"># oslab为容器名称</span></span><br><span class="line">$ docker ps                 <span class="comment"># 可看到容器已经启动</span></span><br><span class="line">CONTAINER ID   IMAGE        COMMAND       CREATED              STATUS        PORTS     NAMES</span><br><span class="line">132a140bd724   oslab:2021   <span class="string">&quot;bash&quot;</span>        About a minute ago   Up 1 second             oslab</span><br><span class="line"></span><br><span class="line"><span class="comment"># 从终端连入 docker 容器</span></span><br><span class="line">$ docker <span class="built_in">exec</span> -it oslab bash</span><br><span class="line"></span><br><span class="line"><span class="comment"># 挂载本地目录</span></span><br><span class="line"><span class="comment"># 把用户的 home 目录映射到 docker 镜像内的 have-fun-debugging 目录</span></span><br><span class="line">$ docker run --name oslab -it -v <span class="variable">$&#123;HOME&#125;</span>:/have-fun-debugging oslab:2021 bash    <span class="comment"># -v 本地目录:容器内目录</span></span><br></pre></td></tr></table></figure>
+<h3 id="42-获取-linux-源码和已经编译好的文件系统"><a class="markdownIt-Anchor" href="#42-获取-linux-源码和已经编译好的文件系统"></a> 4.2 获取 Linux 源码和已经编译好的文件系统</h3>
+<p>从 <a target="_blank" rel="noopener" href="https://www.kernel.org">https://www.kernel.org</a> 下载最新的 Linux 源码。同时在 <a target="_blank" rel="noopener" href="https://gitee.com/zjusec/os21fall">repo</a> 中已经准备好了根文件系统的镜像。</p>
+<blockquote>
+<p>根文件系统为 Linux Kenrel 提供了基础的文件服务，在启动 Linux Kernel 时是必要的。</p>
+</blockquote>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">$ git <span class="built_in">clone</span> https://gitee.com/zju_xiayingjie/os21fall-stu</span><br><span class="line">$ <span class="built_in">cd</span> os21fall-stu/src/lab0</span><br><span class="line">$ ls</span><br><span class="line">rootfs.img  <span class="comment"># 已经构建完成的根文件系统的镜像</span></span><br></pre></td></tr></table></figure>
+<h3 id="43-编译-linux-内核"><a class="markdownIt-Anchor" href="#43-编译-linux-内核"></a> 4.3 编译 linux 内核</h3>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">$ <span class="built_in">pwd</span></span><br><span class="line">path/to/lab0/linux</span><br><span class="line">$ make ARCH=riscv CROSS_COMPILE=riscv64-unknown-linux-gnu- defconfig    <span class="comment"># 生成配置</span></span><br><span class="line">$ make ARCH=riscv CROSS_COMPILE=riscv64-unknown-linux-gnu- -j<span class="variable">$&#123;nproc&#125;</span>           <span class="comment"># 编译</span></span><br></pre></td></tr></table></figure>
+<blockquote>
+<p>使用多线程编译一般会耗费大量内存，如果 <code>-j</code> 选项导致内存耗尽 (out of memory)，请尝试调低线程数，比如 <code>-j4</code>, <code>-j8</code> 等。</p>
+</blockquote>
+<h3 id="44-使用qemu运行内核"><a class="markdownIt-Anchor" href="#44-使用qemu运行内核"></a> 4.4 使用QEMU运行内核</h3>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">$ qemu-system-riscv64 -nographic -machine virt -kernel path/to/linux/arch/riscv/boot/Image \</span><br><span class="line">    -device virtio-blk-device,drive=hd0 -append <span class="string">&quot;root=/dev/vda ro console=ttyS0&quot;</span> \</span><br><span class="line">    -bios default -drive file=rootfs.img,format=raw,id=hd0</span><br></pre></td></tr></table></figure>
+<p>退出 QEMU 的方法为：使用 Ctrl+A，<strong>松开</strong>后再按下 X 键即可退出 QEMU。</p>
+<h3 id="45-使用-gdb-对内核进行调试"><a class="markdownIt-Anchor" href="#45-使用-gdb-对内核进行调试"></a> 4.5 使用 GDB 对内核进行调试</h3>
+<p>这一步需要开启两个 Terminal Session，一个 Terminal 使用 QEMU 启动 Linux，另一个 Terminal 使用 GDB 与 QEMU 远程通信进行调试。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Terminal 1</span></span><br><span class="line">$ qemu-system-riscv64 -nographic -machine virt -kernel path/to/linux/arch/riscv/boot/Image \</span><br><span class="line">    -device virtio-blk-device,drive=hd0 -append <span class="string">&quot;root=/dev/vda ro console=ttyS0&quot;</span> \</span><br><span class="line">    -bios default -drive file=rootfs.img,format=raw,id=hd0 -S -s</span><br><span class="line"></span><br><span class="line"><span class="comment"># Terminal 2</span></span><br><span class="line">$ riscv64-unknown-linux-gnu-gdb path/to/linux/vmlinux</span><br><span class="line">(gdb) target remote :1234   <span class="comment"># 连接 qemu</span></span><br><span class="line">(gdb) b start_kernel        <span class="comment"># 设置断点</span></span><br><span class="line">(gdb) <span class="built_in">continue</span>              <span class="comment"># 继续执行</span></span><br><span class="line">(gdb) quit                  <span class="comment"># 退出 gdb</span></span><br></pre></td></tr></table></figure>
+<h2 id="5-实验任务与要求"><a class="markdownIt-Anchor" href="#5-实验任务与要求"></a> 5 实验任务与要求</h2>
+<ul>
+<li>请各位同学独立完成作业，任何抄袭行为都将使本次作业判为0分。</li>
+<li>编译内核并用 GDB + QEMU 调试，在内核初始化过程中设置断点，对内核的启动过程进行跟踪，并尝试使用gdb的各项命令（如backtrace、finish、frame、info、break、display、next、layout等）。</li>
+<li>在学在浙大中提交 pdf 格式的实验报告，记录实验过程并截图（4.1-4.4）.，对每一步的命令以及结果进行必要的解释，记录遇到的问题和心得体会。</li>
+</ul>
+<h2 id="思考题"><a class="markdownIt-Anchor" href="#思考题"></a> 思考题</h2>
+<ol>
+<li>使用 <code>riscv64-unknown-elf-gcc</code> 编译单个 <code>.c</code> 文件</li>
+<li>使用 <code>riscv64-unknown-elf-objdump</code> 反汇编 1 中得到的编译产物</li>
+<li>调试 Linux 时:
+<ol>
+<li>在 GDB 中查看汇编代码</li>
+<li>在 0x80000000 处下断点</li>
+<li>查看所有已下的断点</li>
+<li>在 0x80200000 处下断点</li>
+<li>清除 0x80000000 处的断点</li>
+<li>继续运行直到触发 0x80200000 处的断点</li>
+<li>单步调试一次</li>
+<li>退出 QEMU</li>
+</ol>
+</li>
+<li>使用 <code>make</code> 工具清除 Linux 的构建产物</li>
+<li><code>vmlinux</code> 和 <code>Image</code> 的关系和区别是什么？</li>
+</ol>
+
+    </div>
+
+    <div style="text-align:center;color: #ccc;font-size:14px;">---------------- The End ----------------</div>
+    
+    
+    
+    
+    
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>Post author:  </strong><font color='#000000' size='6' face='Arial'>South River</font>
+  </li>
+  <li class="post-copyright-link">
+    <strong>Post link: </strong>
+    <a href="http://southriver.space/2021/12/05/Lab0/" title="ZJU OS Lab0:GDB + QEMU 调试 64 位 RISC-V LINUX">http://southriver.space/2021/12/05/Lab0/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>Copyright Notice:  </strong>All articles in this blog are licensed under <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener" target="_blank"><i class="fa fa-fw fa-creative-commons"></i>BY-NC-SA</a> unless stating additionally.
+  </li>
+</ul>
+</div>
+
+
+      <footer class="post-footer">
+          
+          <div class="post-tags">
+              <a href="/tags/OS/" rel="tag"><i class="fa fa-tag"></i> OS</a>
+              <a href="/tags/C/" rel="tag"><i class="fa fa-tag"></i> C</a>
+              <a href="/tags/Linux/" rel="tag"><i class="fa fa-tag"></i> Linux</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2021/12/03/hello-world/" rel="prev" title="Hello World">
+      <i class="fa fa-chevron-left"></i> Hello World
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2021/12/05/Lab1/" rel="next" title="ZJU OS Lab1:RV64 内核引导">
+      ZJU OS Lab1:RV64 内核引导 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+
+
+
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-%E5%AE%9E%E9%AA%8C%E7%9B%AE%E7%9A%84"><span class="nav-number">1.</span> <span class="nav-text"> 1 实验目的</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-%E5%AE%9E%E9%AA%8C%E7%8E%AF%E5%A2%83"><span class="nav-number">2.</span> <span class="nav-text"> 2 实验环境</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-%E5%AE%9E%E9%AA%8C%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86%E4%BB%8B%E7%BB%8D"><span class="nav-number">3.</span> <span class="nav-text"> 3 实验基础知识介绍</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#31-linux-%E4%BD%BF%E7%94%A8%E5%9F%BA%E7%A1%80"><span class="nav-number">3.1.</span> <span class="nav-text"> 3.1 Linux 使用基础</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#32-docker-%E4%BD%BF%E7%94%A8%E5%9F%BA%E7%A1%80"><span class="nav-number">3.2.</span> <span class="nav-text"> 3.2 Docker 使用基础</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#docker-%E5%9F%BA%E6%9C%AC%E4%BB%8B%E7%BB%8D"><span class="nav-number">3.2.1.</span> <span class="nav-text"> Docker 基本介绍</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#docker-%E5%AE%89%E8%A3%85"><span class="nav-number">3.2.2.</span> <span class="nav-text"> Docker 安装</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#33-qemu-%E4%BD%BF%E7%94%A8%E5%9F%BA%E7%A1%80"><span class="nav-number">3.3.</span> <span class="nav-text"> 3.3 QEMU 使用基础</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E4%BB%80%E4%B9%88%E6%98%AFqemu"><span class="nav-number">3.3.1.</span> <span class="nav-text"> 什么是QEMU</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%A6%82%E4%BD%95%E4%BD%BF%E7%94%A8-qemu%E5%B8%B8%E8%A7%81%E5%8F%82%E6%95%B0%E4%BB%8B%E7%BB%8D"><span class="nav-number">3.3.2.</span> <span class="nav-text"> 如何使用 QEMU（常见参数介绍）</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#34-gdb-%E4%BD%BF%E7%94%A8%E5%9F%BA%E7%A1%80"><span class="nav-number">3.4.</span> <span class="nav-text"> 3.4 GDB 使用基础</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E4%BB%80%E4%B9%88%E6%98%AF-gdb"><span class="nav-number">3.4.1.</span> <span class="nav-text"> 什么是 GDB</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#gdb-%E5%9F%BA%E6%9C%AC%E5%91%BD%E4%BB%A4%E4%BB%8B%E7%BB%8D"><span class="nav-number">3.4.2.</span> <span class="nav-text"> GDB 基本命令介绍</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#35-linux-%E5%86%85%E6%A0%B8%E7%BC%96%E8%AF%91%E5%9F%BA%E7%A1%80"><span class="nav-number">3.5.</span> <span class="nav-text"> 3.5 Linux 内核编译基础</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E4%BA%A4%E5%8F%89%E7%BC%96%E8%AF%91"><span class="nav-number">3.5.1.</span> <span class="nav-text"> 交叉编译</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%86%85%E6%A0%B8%E9%85%8D%E7%BD%AE"><span class="nav-number">3.5.2.</span> <span class="nav-text"> 内核配置</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%B8%B8%E8%A7%81%E5%8F%82%E6%95%B0"><span class="nav-number">3.5.3.</span> <span class="nav-text"> 常见参数</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%B8%B8%E7%94%A8%E7%9A%84-linux-%E4%B8%8B%E7%9A%84%E7%BC%96%E8%AF%91%E9%80%89%E9%A1%B9"><span class="nav-number">3.5.4.</span> <span class="nav-text"> 常用的 Linux 下的编译选项</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-%E5%AE%9E%E9%AA%8C%E6%AD%A5%E9%AA%A4"><span class="nav-number">4.</span> <span class="nav-text"> 4 实验步骤</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#41-%E6%90%AD%E5%BB%BA-docker-%E7%8E%AF%E5%A2%83"><span class="nav-number">4.1.</span> <span class="nav-text"> 4.1 搭建 Docker 环境</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#42-%E8%8E%B7%E5%8F%96-linux-%E6%BA%90%E7%A0%81%E5%92%8C%E5%B7%B2%E7%BB%8F%E7%BC%96%E8%AF%91%E5%A5%BD%E7%9A%84%E6%96%87%E4%BB%B6%E7%B3%BB%E7%BB%9F"><span class="nav-number">4.2.</span> <span class="nav-text"> 4.2 获取 Linux 源码和已经编译好的文件系统</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#43-%E7%BC%96%E8%AF%91-linux-%E5%86%85%E6%A0%B8"><span class="nav-number">4.3.</span> <span class="nav-text"> 4.3 编译 linux 内核</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#44-%E4%BD%BF%E7%94%A8qemu%E8%BF%90%E8%A1%8C%E5%86%85%E6%A0%B8"><span class="nav-number">4.4.</span> <span class="nav-text"> 4.4 使用QEMU运行内核</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#45-%E4%BD%BF%E7%94%A8-gdb-%E5%AF%B9%E5%86%85%E6%A0%B8%E8%BF%9B%E8%A1%8C%E8%B0%83%E8%AF%95"><span class="nav-number">4.5.</span> <span class="nav-text"> 4.5 使用 GDB 对内核进行调试</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-%E5%AE%9E%E9%AA%8C%E4%BB%BB%E5%8A%A1%E4%B8%8E%E8%A6%81%E6%B1%82"><span class="nav-number">5.</span> <span class="nav-text"> 5 实验任务与要求</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%80%9D%E8%80%83%E9%A2%98"><span class="nav-number">6.</span> <span class="nav-text"> 思考题</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="<font color='#000000' size='6' face='Arial'>South River</font>"
+      src="/images/logo.webp">
+  <p class="site-author-name" itemprop="name"><font color='#000000' size='6' face='Arial'>South River</font></p>
+  <div class="site-description" itemprop="description"><font color='#000000' size='3' face='Arial'>sleeping or playing...</font></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">7</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">5</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/South-River" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;South-River" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:278042969@qq.com" title="E-Mail → mailto:278042969@qq.com" rel="noopener" target="_blank"><i class="fa fa-fw fa-envelope"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://southriver.space/QQ" title="QQ → https:&#x2F;&#x2F;southriver.space&#x2F;QQ"><i class="fa fa-fw fa-qq"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://music.163.com/#/user/home?id=255712035" title="Netease → https:&#x2F;&#x2F;music.163.com&#x2F;#&#x2F;user&#x2F;home?id&#x3D;255712035" rel="noopener" target="_blank"><i class="fa fa-fw fa-headphones"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://space.bilibili.com/18713682" title="BiliBili → https:&#x2F;&#x2F;space.bilibili.com&#x2F;18713682" rel="noopener" target="_blank"><i class="fa fa-fw fa-play"></i></a>
+      </span>
+  </div>
+  <div class="cc-license motion-element" itemprop="license">
+    <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" class="cc-opacity" rel="noopener" target="_blank"><img src="/images/cc-by-nc-sa.svg" alt="Creative Commons"></a>
+  </div>
+
+
+
+      </div>
+
+      <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/aplayer@1.10.1/dist/APlayer.min.css">
+      <script src="https://cdn.jsdelivr.net/npm/aplayer@1.10.1/dist/APlayer.min.js"></script>
+      <!-- require MetingJS-->
+      <script src="https://cdn.jsdelivr.net/npm/meting@1.2/dist/Meting.min.js"></script> 
+	    <!--网易云-->   
+      <div class="aplayer" 
+      data-id="5247992141" 
+      data-server="netease" 
+      data-type="playlist" 
+      data-fixed="false" 
+      data-autoplay="true" 
+      data-list-folded="true"
+      data-mutex="true"
+      data-order="random" 
+      data-loop="all"
+      data-volume="0.4" 
+      data-theme="#FADFA3" 
+      date-preload="auto" > 
+      </div>
+      
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">SouthRiver</span>
+</div>
+
+<div>
+<span id="timeDate">载入天数...</span><span id="times">载入时分秒...</span>
+<script>
+    var now = new Date();
+    function createtime() {
+        var grt= new Date("12/05/2021 00:00:00");
+        now.setTime(now.getTime()+250);
+        days = (now - grt ) / 1000 / 60 / 60 / 24; dnum = Math.floor(days);
+        hours = (now - grt ) / 1000 / 60 / 60 - (24 * dnum); hnum = Math.floor(hours);
+        if(String(hnum).length ==1 ){hnum = "0" + hnum;} minutes = (now - grt ) / 1000 /60 - (24 * 60 * dnum) - (60 * hnum);
+        mnum = Math.floor(minutes); if(String(mnum).length ==1 ){mnum = "0" + mnum;}
+        seconds = (now - grt ) / 1000 - (24 * 60 * 60 * dnum) - (60 * 60 * hnum) - (60 * mnum);
+        snum = Math.round(seconds); if(String(snum).length ==1 ){snum = "0" + snum;}
+        document.getElementById("timeDate").innerHTML = "本站已运行 "+dnum+" 天 ";
+        document.getElementById("times").innerHTML = hnum + " 小时 " + mnum + " 分 " + snum + " 秒";
+    }
+setInterval("createtime()",250);
+</script>
+</div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/pjax/pjax.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+  <script>
+var pjax = new Pjax({
+  selectors: [
+    'head title',
+    '#page-configurations',
+    '.content-wrap',
+    '.post-toc-wrap',
+    '.languages',
+    '#pjax'
+  ],
+  switches: {
+    '.post-toc-wrap': Pjax.switches.innerHTML
+  },
+  analytics: false,
+  cacheBust: false,
+  scrollTo : !CONFIG.bookmark.enable
+});
+
+window.addEventListener('pjax:success', () => {
+  document.querySelectorAll('script[data-pjax], script#page-configurations, #pjax script').forEach(element => {
+    var code = element.text || element.textContent || element.innerHTML || '';
+    var parent = element.parentNode;
+    parent.removeChild(element);
+    var script = document.createElement('script');
+    if (element.id) {
+      script.id = element.id;
+    }
+    if (element.className) {
+      script.className = element.className;
+    }
+    if (element.type) {
+      script.type = element.type;
+    }
+    if (element.src) {
+      script.src = element.src;
+      // Force synchronous loading of peripheral JS.
+      script.async = false;
+    }
+    if (element.dataset.pjax !== undefined) {
+      script.dataset.pjax = '';
+    }
+    if (code !== '') {
+      script.appendChild(document.createTextNode(code));
+    }
+    parent.appendChild(script);
+  });
+  NexT.boot.refresh();
+  // Define Motion Sequence & Bootstrap Motion.
+  if (CONFIG.motion.enable) {
+    NexT.motion.integrator
+      .init()
+      .add(NexT.motion.middleWares.subMenu)
+      .add(NexT.motion.middleWares.postList)
+      .bootstrap();
+  }
+  NexT.utils.updateSidebarPosition();
+});
+</script>
+
+
+  <script defer src="/lib/three/three.min.js"></script>
+    <script defer src="/lib/three/canvas_lines.min.js"></script>
+
+
+  
+  <script data-pjax>
+    (function(){
+      var bp = document.createElement('script');
+      var curProtocol = window.location.protocol.split(':')[0];
+      bp.src = (curProtocol === 'https') ? 'https://zz.bdstatic.com/linksubmit/push.js' : 'http://push.zhanzhang.baidu.com/push.js';
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(bp, s);
+    })();
+  </script>
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <div id="pjax">
+  
+
+  
+
+  
+<script src="https://cdn.jsdelivr.net/npm/darkmode-js@1.5.7/lib/darkmode-js.min.js"></script>
+
+<script>
+var options = {
+  bottom: '75px',
+  right: 'unset',
+  left: '18px',
+  time: '0.5s',
+  mixColor: 'transparent',
+  backgroundColor: 'transparent',
+  buttonColorDark: '#000',
+  buttonColorLight: '#fff',
+  saveInCookies: true,
+  label: '🌓',
+  autoMatchOsTheme: true
+}
+const darkmode = new Darkmode(options);
+window.darkmode = darkmode;
+darkmode.showWidget();
+</script>
+
+    </div>
+  
+  <script type="text/javascript" src="/js/clicklove.js"></script>
+<script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"log":false,"pluginJsPath":"lib/","pluginModelPath":"assets/","pluginRootPath":"live2dw/","tagMode":false});</script></body>
+</html>
+
