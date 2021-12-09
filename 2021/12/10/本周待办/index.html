@@ -22,30 +22,33 @@
     var CONFIG = {"hostname":"southriver.space","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":true},"copycode":{"enable":true,"show_result":true,"style":"flat"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"valine","storage":true,"lazyload":true,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
   </script>
 
-  <meta name="description" content="sleeping or playing...">
-<meta property="og:type" content="website">
-<meta property="og:title" content="South River&#39;s Space">
-<meta property="og:url" content="http://southriver.space/index.html">
+  <meta name="description" content="EKF的思考 根据观测模型公式: μt&#x3D;h(μt−1‾)+Kt∗(zt−h(μt−1‾))Σt&#x3D;(I−Kt∗Ht)∗Σt‾Kt&#x3D;Σt‾HtT(HtΣt‾HtT+Qt)−1\mu_t &#x3D; h(\overline{ \mu_{t-1}}) + K_t*(z_t-h(\overline {\mu_{t-1}}))\\ \Sigma_t&#x3D;(I-K_t*H_t)*\overline{\Sigma_t}\\">
+<meta property="og:type" content="article">
+<meta property="og:title" content="本周待办">
+<meta property="og:url" content="http://southriver.space/2021/12/10/%E6%9C%AC%E5%91%A8%E5%BE%85%E5%8A%9E/index.html">
 <meta property="og:site_name" content="South River&#39;s Space">
-<meta property="og:description" content="sleeping or playing...">
+<meta property="og:description" content="EKF的思考 根据观测模型公式: μt&#x3D;h(μt−1‾)+Kt∗(zt−h(μt−1‾))Σt&#x3D;(I−Kt∗Ht)∗Σt‾Kt&#x3D;Σt‾HtT(HtΣt‾HtT+Qt)−1\mu_t &#x3D; h(\overline{ \mu_{t-1}}) + K_t*(z_t-h(\overline {\mu_{t-1}}))\\ \Sigma_t&#x3D;(I-K_t*H_t)*\overline{\Sigma_t}\\">
 <meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2021-12-09T16:56:08.000Z">
+<meta property="article:modified_time" content="2021-12-09T17:21:28.029Z">
 <meta property="article:author" content="&lt;font color&#x3D;&#39;#000000&#39; size&#x3D;&#39;6&#39; face&#x3D;&#39;Arial&#39;&gt;South River&lt;&#x2F;font&gt;">
+<meta property="article:tag" content="live">
 <meta name="twitter:card" content="summary">
 
-<link rel="canonical" href="http://southriver.space/">
+<link rel="canonical" href="http://southriver.space/2021/12/10/%E6%9C%AC%E5%91%A8%E5%BE%85%E5%8A%9E/">
 
 
 <script id="page-configurations">
   // https://hexo.io/docs/variables.html
   CONFIG.page = {
     sidebar: "",
-    isHome : true,
-    isPost : false,
+    isHome : false,
+    isPost : true,
     lang   : 'en'
   };
 </script>
 
-  <title>South River's Space</title>
+  <title>本周待办 | South River's Space</title>
   
 
 
@@ -182,9 +185,10 @@
         <div class="content-wrap">
           
 
-          <div class="content index posts-expand">
+          <div class="content post posts-expand">
             
-      
+
+    
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
@@ -200,10 +204,9 @@
       <meta itemprop="name" content="South River's Space">
     </span>
       <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2021/12/10/%E6%9C%AC%E5%91%A8%E5%BE%85%E5%8A%9E/" class="post-title-link" itemprop="url">本周待办</a>
-        </h2>
+        <h1 class="post-title" itemprop="name headline">
+          本周待办
+        </h1>
 
         <div class="post-meta">
             <span class="post-meta-item">
@@ -227,7 +230,7 @@
     <div class="post-body" itemprop="articleBody">
 
       
-          <h2 id="ekf的思考"><a class="markdownIt-Anchor" href="#ekf的思考"></a> EKF的思考</h2>
+        <h2 id="ekf的思考"><a class="markdownIt-Anchor" href="#ekf的思考"></a> EKF的思考</h2>
 <p>根据观测模型公式:</p>
 <p class='katex-block'><span class="katex-display"><span class="katex"><span class="katex-mathml"><math><semantics><mrow><msub><mi>μ</mi><mi>t</mi></msub><mo>=</mo><mi>h</mi><mo stretchy="false">(</mo><mover accent="true"><msub><mi>μ</mi><mrow><mi>t</mi><mo>−</mo><mn>1</mn></mrow></msub><mo stretchy="true">‾</mo></mover><mo stretchy="false">)</mo><mo>+</mo><msub><mi>K</mi><mi>t</mi></msub><mo>∗</mo><mo stretchy="false">(</mo><msub><mi>z</mi><mi>t</mi></msub><mo>−</mo><mi>h</mi><mo stretchy="false">(</mo><mover accent="true"><msub><mi>μ</mi><mrow><mi>t</mi><mo>−</mo><mn>1</mn></mrow></msub><mo stretchy="true">‾</mo></mover><mo stretchy="false">)</mo><mo stretchy="false">)</mo><mspace linebreak="newline"></mspace><msub><mi mathvariant="normal">Σ</mi><mi>t</mi></msub><mo>=</mo><mo stretchy="false">(</mo><mi>I</mi><mo>−</mo><msub><mi>K</mi><mi>t</mi></msub><mo>∗</mo><msub><mi>H</mi><mi>t</mi></msub><mo stretchy="false">)</mo><mo>∗</mo><mover accent="true"><msub><mi mathvariant="normal">Σ</mi><mi>t</mi></msub><mo stretchy="true">‾</mo></mover><mspace linebreak="newline"></mspace><msub><mi>K</mi><mi>t</mi></msub><mo>=</mo><mover accent="true"><msub><mi mathvariant="normal">Σ</mi><mi>t</mi></msub><mo stretchy="true">‾</mo></mover><msubsup><mi>H</mi><mi>t</mi><mi>T</mi></msubsup><mo stretchy="false">(</mo><msub><mi>H</mi><mi>t</mi></msub><mover accent="true"><msub><mi mathvariant="normal">Σ</mi><mi>t</mi></msub><mo stretchy="true">‾</mo></mover><msubsup><mi>H</mi><mi>t</mi><mi>T</mi></msubsup><mo>+</mo><msub><mi>Q</mi><mi>t</mi></msub><msup><mo stretchy="false">)</mo><mrow><mo>−</mo><mn>1</mn></mrow></msup></mrow><annotation encoding="application/x-tex">\mu_t = h(\overline{ \mu_{t-1}}) + K_t*(z_t-h(\overline {\mu_{t-1}}))\\
 \Sigma_t=(I-K_t*H_t)*\overline{\Sigma_t}\\
@@ -247,7 +250,6 @@ K_t=\overline{\Sigma_t}H_t^T(H_t\overline{\Sigma_t}H_t^T+Q_t)^{-1}
 <h2 id="os实验报告"><a class="markdownIt-Anchor" href="#os实验报告"></a> OS实验报告</h2>
 <p>Lab4真真不是人做的。。。</p>
 
-      
     </div>
 
     <div style="text-align:center;color: #ccc;font-size:14px;">---------------- The End ----------------</div>
@@ -256,567 +258,49 @@ K_t=\overline{\Sigma_t}H_t^T(H_t\overline{\Sigma_t}H_t^T+Q_t)^{-1}
     
     
     
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
+        
 
-
-
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
-    <link itemprop="mainEntityOfPage" href="http://southriver.space/2021/12/09/Lab4/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/logo.webp">
-      <meta itemprop="name" content="<font color='#000000' size='6' face='Arial'>South River</font>">
-      <meta itemprop="description" content="<font color='#000000' size='3' face='Arial'>sleeping or playing...</font>">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="South River's Space">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2021/12/09/Lab4/" class="post-title-link" itemprop="url">ZJU OS Lab4:RV64 虚拟内存管理</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2021-12-09 01:56:43" itemprop="dateCreated datePublished" datetime="2021-12-09T01:56:43+08:00">2021-12-09</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="fa fa-calendar-check-o"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-12-10 00:52:57" itemprop="dateModified" datetime="2021-12-10T00:52:57+08:00">2021-12-10</time>
-              </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h2 id="1-实验目的"><a class="markdownIt-Anchor" href="#1-实验目的"></a> 1 实验目的</h2>
-<ul>
-<li>学习虚拟内存的相关知识，实现物理地址到虚拟地址的切换。</li>
-<li>了解 RISC-V 架构中 SV39 分页模式，实现虚拟地址到物理地址的映射，并对不同的段进行相应的权限设置。</li>
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>Post author:  </strong><font color='#000000' size='6' face='Arial'>South River</font>
+  </li>
+  <li class="post-copyright-link">
+    <strong>Post link: </strong>
+    <a href="http://southriver.space/2021/12/10/%E6%9C%AC%E5%91%A8%E5%BE%85%E5%8A%9E/" title="本周待办">http://southriver.space/2021/12/10/本周待办/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>Copyright Notice:  </strong>All articles in this blog are licensed under <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener" target="_blank"><i class="fa fa-fw fa-creative-commons"></i>BY-NC-SA</a> unless stating additionally.
+  </li>
 </ul>
-          <!--noindex-->
-            <div class="post-button">
-              <a class="btn" href="/2021/12/09/Lab4/#more" rel="contents">
-                Read more &raquo;
-              </a>
-            </div>
-          <!--/noindex-->
-        
-      
-    </div>
+</div>
 
-    <div style="text-align:center;color: #ccc;font-size:14px;">---------------- The End ----------------</div>
-    
-    
-    
-    
-    
+
       <footer class="post-footer">
-        <div class="post-eof"></div>
+          
+          <div class="post-tags">
+              <a href="/tags/live/" rel="tag"><i class="fa fa-tag"></i> live</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2021/12/09/Lab4/" rel="prev" title="ZJU OS Lab4:RV64 虚拟内存管理">
+      <i class="fa fa-chevron-left"></i> ZJU OS Lab4:RV64 虚拟内存管理
+    </a></div>
+      <div class="post-nav-item"></div>
+    </div>
       </footer>
+    
 
 
 
   </article>
   
   
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
-    <link itemprop="mainEntityOfPage" href="http://southriver.space/2021/12/05/ICP%E8%AE%A1%E7%AE%97%E5%8A%A0%E9%80%9F/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/logo.webp">
-      <meta itemprop="name" content="<font color='#000000' size='6' face='Arial'>South River</font>">
-      <meta itemprop="description" content="<font color='#000000' size='3' face='Arial'>sleeping or playing...</font>">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="South River's Space">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2021/12/05/ICP%E8%AE%A1%E7%AE%97%E5%8A%A0%E9%80%9F/" class="post-title-link" itemprop="url">ICP计算加速</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2021-12-05 19:55:51" itemprop="dateCreated datePublished" datetime="2021-12-05T19:55:51+08:00">2021-12-05</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="fa fa-calendar-check-o"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-12-09 01:55:55" itemprop="dateModified" datetime="2021-12-09T01:55:55+08:00">2021-12-09</time>
-              </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h1 id="icp加速"><a class="markdownIt-Anchor" href="#icp加速"></a> ICP加速</h1>
-<p>由于要求使用python，因此需要特别关注如何让ICP计算的更快，通过以下方案加快ICP计算并成功加速约20倍。</p>
-<h3 id="kdtree"><a class="markdownIt-Anchor" href="#kdtree"></a> KDTree</h3>
-<h4 id="使用"><a class="markdownIt-Anchor" href="#使用"></a> 使用</h4>
-<p>用处：加速icp激光点匹配</p>
-          <!--noindex-->
-            <div class="post-button">
-              <a class="btn" href="/2021/12/05/ICP%E8%AE%A1%E7%AE%97%E5%8A%A0%E9%80%9F/#more" rel="contents">
-                Read more &raquo;
-              </a>
-            </div>
-          <!--/noindex-->
-        
-      
-    </div>
-
-    <div style="text-align:center;color: #ccc;font-size:14px;">---------------- The End ----------------</div>
-    
-    
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-
-
-
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
-    <link itemprop="mainEntityOfPage" href="http://southriver.space/2021/12/05/Lab3/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/logo.webp">
-      <meta itemprop="name" content="<font color='#000000' size='6' face='Arial'>South River</font>">
-      <meta itemprop="description" content="<font color='#000000' size='3' face='Arial'>sleeping or playing...</font>">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="South River's Space">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2021/12/05/Lab3/" class="post-title-link" itemprop="url">ZJU OS Lab3:RV64 内核线程调度</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-              
-
-              <time title="Created: 2021-12-05 19:09:18 / Modified: 19:20:05" itemprop="dateCreated datePublished" datetime="2021-12-05T19:09:18+08:00">2021-12-05</time>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h2 id="1-实验目的"><a class="markdownIt-Anchor" href="#1-实验目的"></a> 1 实验目的</h2>
-<ul>
-<li>了解线程概念，并学习线程相关结构体，并实现线程的初始化功能。</li>
-<li>了解如何使用时钟中断来实现线程的调度。</li>
-<li>了解线程切换原理，并实现线程的切换。</li>
-<li>掌握简单的线程调度算法，并完成两种简单调度算法的实现。</li>
-</ul>
-          <!--noindex-->
-            <div class="post-button">
-              <a class="btn" href="/2021/12/05/Lab3/#more" rel="contents">
-                Read more &raquo;
-              </a>
-            </div>
-          <!--/noindex-->
-        
-      
-    </div>
-
-    <div style="text-align:center;color: #ccc;font-size:14px;">---------------- The End ----------------</div>
-    
-    
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-
-
-
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
-    <link itemprop="mainEntityOfPage" href="http://southriver.space/2021/12/05/Lab2/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/logo.webp">
-      <meta itemprop="name" content="<font color='#000000' size='6' face='Arial'>South River</font>">
-      <meta itemprop="description" content="<font color='#000000' size='3' face='Arial'>sleeping or playing...</font>">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="South River's Space">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2021/12/05/Lab2/" class="post-title-link" itemprop="url">ZJU OS Lab2:RV64 时钟中断处理</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-              
-
-              <time title="Created: 2021-12-05 19:09:17 / Modified: 19:18:36" itemprop="dateCreated datePublished" datetime="2021-12-05T19:09:17+08:00">2021-12-05</time>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h2 id="1-实验目的"><a class="markdownIt-Anchor" href="#1-实验目的"></a> 1 实验目的</h2>
-<ul>
-<li>学习 RISC-V 的异常处理相关寄存器与指令，完成对异常处理的初始化。</li>
-<li>理解 CPU 上下文切换机制，并正确实现上下文切换功能。</li>
-<li>编写异常处理函数，完成对特定异常的处理。</li>
-<li>调用 OpenSBI 提供的接口，完成对时钟中断事件的设置。</li>
-</ul>
-          <!--noindex-->
-            <div class="post-button">
-              <a class="btn" href="/2021/12/05/Lab2/#more" rel="contents">
-                Read more &raquo;
-              </a>
-            </div>
-          <!--/noindex-->
-        
-      
-    </div>
-
-    <div style="text-align:center;color: #ccc;font-size:14px;">---------------- The End ----------------</div>
-    
-    
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-
-
-
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
-    <link itemprop="mainEntityOfPage" href="http://southriver.space/2021/12/05/Lab1/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/logo.webp">
-      <meta itemprop="name" content="<font color='#000000' size='6' face='Arial'>South River</font>">
-      <meta itemprop="description" content="<font color='#000000' size='3' face='Arial'>sleeping or playing...</font>">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="South River's Space">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2021/12/05/Lab1/" class="post-title-link" itemprop="url">ZJU OS Lab1:RV64 内核引导</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-              
-
-              <time title="Created: 2021-12-05 19:09:16 / Modified: 20:13:41" itemprop="dateCreated datePublished" datetime="2021-12-05T19:09:16+08:00">2021-12-05</time>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h2 id="1-实验目的"><a class="markdownIt-Anchor" href="#1-实验目的"></a> 1 实验目的</h2>
-<p>学习 RISC-V 汇编， OpenSBI, 以及 Makefile相关知识，编写 head.S 实现跳转到内核运行的第一个 C 函数，调用 OpenSBI 接口完成字符的输出以及编写 Makefile 来完成对整个工程的管理。</p>
-          <!--noindex-->
-            <div class="post-button">
-              <a class="btn" href="/2021/12/05/Lab1/#more" rel="contents">
-                Read more &raquo;
-              </a>
-            </div>
-          <!--/noindex-->
-        
-      
-    </div>
-
-    <div style="text-align:center;color: #ccc;font-size:14px;">---------------- The End ----------------</div>
-    
-    
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-
-
-
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
-    <link itemprop="mainEntityOfPage" href="http://southriver.space/2021/12/05/Lab0/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/logo.webp">
-      <meta itemprop="name" content="<font color='#000000' size='6' face='Arial'>South River</font>">
-      <meta itemprop="description" content="<font color='#000000' size='3' face='Arial'>sleeping or playing...</font>">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="South River's Space">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2021/12/05/Lab0/" class="post-title-link" itemprop="url">ZJU OS Lab0:GDB + QEMU 调试 64 位 RISC-V LINUX</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-              
-
-              <time title="Created: 2021-12-05 19:09:15 / Modified: 19:19:51" itemprop="dateCreated datePublished" datetime="2021-12-05T19:09:15+08:00">2021-12-05</time>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h2 id="1-实验目的"><a class="markdownIt-Anchor" href="#1-实验目的"></a> 1 实验目的</h2>
-<ul>
-<li>了解容器的使用</li>
-<li>使用交叉编译工具, 完成Linux内核代码编译</li>
-<li>使用QEMU运行内核</li>
-<li>熟悉GDB和QEMU联合调试</li>
-</ul>
-          <!--noindex-->
-            <div class="post-button">
-              <a class="btn" href="/2021/12/05/Lab0/#more" rel="contents">
-                Read more &raquo;
-              </a>
-            </div>
-          <!--/noindex-->
-        
-      
-    </div>
-
-    <div style="text-align:center;color: #ccc;font-size:14px;">---------------- The End ----------------</div>
-    
-    
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-
-
-
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
-    <link itemprop="mainEntityOfPage" href="http://southriver.space/2021/12/03/hello-world/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/logo.webp">
-      <meta itemprop="name" content="<font color='#000000' size='6' face='Arial'>South River</font>">
-      <meta itemprop="description" content="<font color='#000000' size='3' face='Arial'>sleeping or playing...</font>">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="South River's Space">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2021/12/03/hello-world/" class="post-title-link" itemprop="url">Hello World</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2021-12-03 00:00:00" itemprop="dateCreated datePublished" datetime="2021-12-03T00:00:00+08:00">2021-12-03</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="fa fa-calendar-check-o"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-12-05 19:18:59" itemprop="dateModified" datetime="2021-12-05T19:18:59+08:00">2021-12-05</time>
-              </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <p>Welcome to my personal page!</p>
-          <!--noindex-->
-            <div class="post-button">
-              <a class="btn" href="/2021/12/03/hello-world/#more" rel="contents">
-                Read more &raquo;
-              </a>
-            </div>
-          <!--/noindex-->
-        
-      
-    </div>
-
-    <div style="text-align:center;color: #ccc;font-size:14px;">---------------- The End ----------------</div>
-    
-    
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-
-
-
-  </article>
-  
-  
-  
-
-
   
 
 
@@ -869,6 +353,7 @@ K_t=\overline{\Sigma_t}H_t^T(H_t\overline{\Sigma_t}H_t^T+Q_t)^{-1}
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#ekf%E7%9A%84%E6%80%9D%E8%80%83"><span class="nav-number">1.</span> <span class="nav-text"> EKF的思考</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#icp%E5%A4%9A%E5%B8%A7%E6%95%B0%E6%8D%AE%E8%9E%8D%E5%90%88"><span class="nav-number">2.</span> <span class="nav-text"> ICP多帧数据融合</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%A7%86%E8%A7%89%E9%87%8C%E7%A8%8B%E8%AE%A1"><span class="nav-number">3.</span> <span class="nav-text"> 视觉里程计</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%96%97%E5%9C%B0%E4%B8%BB%E6%AF%94%E8%B5%9B"><span class="nav-number">4.</span> <span class="nav-text"> 斗地主比赛</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%9C%8B%E7%95%AA"><span class="nav-number">5.</span> <span class="nav-text"> 看番</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#os%E5%AE%9E%E9%AA%8C%E6%8A%A5%E5%91%8A"><span class="nav-number">6.</span> <span class="nav-text"> OS实验报告</span></a></li></ol></div>
       </div>
       <!--/noindex-->
 
@@ -1111,11 +596,6 @@ window.addEventListener('pjax:success', () => {
   
 
   
-      
-<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/katex@0/dist/katex.min.css">
-  <script src="//cdn.jsdelivr.net/npm/katex@0/dist/contrib/copy-tex.min.js"></script>
-  <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/katex@0/dist/contrib/copy-tex.min.css">
-
 
   
 <script src="https://cdn.jsdelivr.net/npm/darkmode-js@1.5.7/lib/darkmode-js.min.js"></script>
