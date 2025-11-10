@@ -101,6 +101,11 @@ I'd like to see robots could adjust self behaviors smartly based on its learned 
 - Large scale parallel motion planning
 - Model-based policy optimization
 
+Scholarships
+=====
+- National Scholarship in Zhejiang University (2024-2025)
+- Merit Scholarships in Zhejiang University (2019-2020, 2020-2021)
+
 Publications
 ======
 - Cost-effective Swarm Navigation System via Close Cooperation [[paper](https://ieeexplore.ieee.org/document/10545578/)] [[video](https://www.bilibili.com/video/BV1X7421Z7Gv/?vd_source=b2528621e6c9d392d6d429b1093e0eb2)]
